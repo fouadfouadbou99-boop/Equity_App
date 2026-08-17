@@ -193,3 +193,4 @@ if uploaded_file is not None:
         st.info("Veuillez vérifier que votre fichier Excel est correctement formaté.")
 else:
     st.info("Veuillez téléverser un fichier Excel pour commencer l'analyse.")
+
