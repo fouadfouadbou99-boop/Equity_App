@@ -1,10 +1,7 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-
 import plotly.express as px
 import plotly.graph_objects as go
-
 from io import BytesIO
 
 from utils import (
@@ -18,33 +15,36 @@ from utils import (
 
 st.set_page_config(
     page_title="Portfolio Analytics",
+    page_icon="📈",
     layout="wide"
 )
 
-st.title("📊 Analyse de la Poche Actions")
+st.title("📈 Portfolio Analytics Dashboard")
 
-st.markdown(
-"""
-Suivi de performance du portefeuille
-comparé au MASI RB
-"""
-)
+st.markdown("""
+Analyse de la Poche Actions
+Comparaison avec le MASI RB
+""")
 
 # --------------------------------------------------
-# CHARGEMENT
+# UPLOAD
 # --------------------------------------------------
 
 uploaded_file = st.file_uploader(
-    "Charger le fichier Excel",
+    "Télécharger le fichier Excel",
     type=["xlsx"]
 )
 
 if uploaded_file is None:
-    st.info("Veuillez charger un fichier Excel.")
+
+    st.info(
+        "Veuillez charger votre fichier Excel."
+    )
+
     st.stop()
 
 # --------------------------------------------------
-# LECTURE
+# CHARGEMENT DATA
 # --------------------------------------------------
 
 try:
@@ -54,63 +54,59 @@ try:
 except Exception as e:
 
     st.error(
-        f"Erreur de lecture du fichier : {e}"
+        f"Erreur lors du chargement : {e}"
     )
 
     st.stop()
 
 # --------------------------------------------------
-# CALCULS
+# KPI
 # --------------------------------------------------
 
 metrics, active_return = calculate_metrics(df)
 
-# --------------------------------------------------
-# KPI
-# --------------------------------------------------
-
 st.header("Indicateurs Clés")
 
-c1, c2, c3, c4 = st.columns(4)
+kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
-c1.metric(
+kpi1.metric(
     "Performance Portefeuille",
     f"{metrics['Performance Portefeuille']:.2%}"
 )
 
-c2.metric(
+kpi2.metric(
     "Performance Indice",
     f"{metrics['Performance Indice']:.2%}"
 )
 
-c3.metric(
+kpi3.metric(
     "Alpha",
     f"{metrics['Alpha']:.2%}"
 )
 
-c4.metric(
+kpi4.metric(
     "Hit Ratio",
     f"{metrics['Hit Ratio']:.2%}"
 )
 
-c5, c6, c7, c8 = st.columns(4)
+kpi5, kpi6, kpi7, kpi8 = st.columns(4)
 
-c5.metric(
+kpi5.metric(
     "Bêta",
     f"{metrics['Beta']:.2f}"
 )
 
-c6.metric(
+kpi6.metric(
     "Corrélation",
     f"{metrics['Corrélation']:.2f}"
 )
 
-c7.metric(
+kpi7.metric(
     "Tracking Error",
     f"{metrics['Tracking Error']:.2%}"
 )
 
-c8.metric(
+kpi8.metric(
     "Information Ratio",
     f"{metrics['Information Ratio']:.2f}"
 )
@@ -132,12 +128,12 @@ st.dataframe(
 )
 
 # --------------------------------------------------
-# EVOLUTION BASE 100
+# COURBE BASE 100
 # --------------------------------------------------
 
 st.header("Evolution Base 100")
 
-fig_base100 = px.line(
+fig = px.line(
     df,
     x="Date",
     y=[
@@ -146,17 +142,17 @@ fig_base100 = px.line(
     ],
     labels={
         "value": "Base 100",
-        "variable": "Série"
+        "variable": "Portefeuille / MASI"
     }
 )
 
 st.plotly_chart(
-    fig_base100,
+    fig,
     use_container_width=True
 )
 
 # --------------------------------------------------
-# PERFORMANCE HEBDO
+# PERFORMANCES HEBDO
 # --------------------------------------------------
 
 st.header("Rendements Hebdomadaires")
@@ -222,7 +218,7 @@ st.header("Distribution des Rendements")
 fig_hist = px.histogram(
     df,
     x="Perf_Portefeuille",
-    nbins=25
+    nbins=30
 )
 
 st.plotly_chart(
@@ -231,18 +227,18 @@ st.plotly_chart(
 )
 
 # --------------------------------------------------
-# SCATTER BETA
+# BETA
 # --------------------------------------------------
 
-st.header("Analyse Bêta")
+st.header("Analyse du Bêta")
 
 scatter_df = pd.DataFrame({
 
-    "Portefeuille":
-    df["Perf_Portefeuille"],
-
     "Indice":
-    df["Perf_MASI"]
+        df["Perf_MASI"],
+
+    "Portefeuille":
+        df["Perf_Portefeuille"]
 
 }).dropna()
 
@@ -259,24 +255,22 @@ st.plotly_chart(
 )
 
 # --------------------------------------------------
-# ANALYSE AUTOMATIQUE
+# COMMENTAIRE
 # --------------------------------------------------
 
-st.header("Commentaire Automatique")
+st.header("Analyse Automatique")
 
 alpha = metrics["Alpha"]
-
-tracking_error = metrics["Tracking Error"]
-
-hit_ratio = metrics["Hit Ratio"]
 
 if alpha > 0:
 
     st.success(
         f"""
         Le portefeuille surperforme
-        son benchmark avec un alpha
-        de {alpha:.2%}.
+        son benchmark.
+
+        Alpha observé :
+        {alpha:.2%}
         """
     )
 
@@ -285,15 +279,19 @@ else:
     st.error(
         f"""
         Le portefeuille sous-performe
-        son benchmark avec un alpha
-        de {alpha:.2%}.
+        son benchmark.
+
+        Alpha observé :
+        {alpha:.2%}
         """
     )
+
+tracking_error = metrics["Tracking Error"]
 
 if tracking_error < 0.05:
 
     st.info(
-        "Le niveau de risque actif reste maîtrisé."
+        "Le niveau de risque actif reste modéré."
     )
 
 else:
@@ -302,55 +300,69 @@ else:
         "Le risque actif est relativement élevé."
     )
 
-if hit_ratio > 0.50:
-
-    st.success(
-        f"Hit Ratio favorable : {hit_ratio:.2%}"
-    )
-
-else:
-
-    st.warning(
-        f"Hit Ratio faible : {hit_ratio:.2%}"
-    )
-
 # --------------------------------------------------
-# SYNTHÈSE EXÉCUTIVE
+# SYNTHÈSE
 # --------------------------------------------------
 
 st.header("Résumé Exécutif")
 
 resume = f"""
 
+Nombre de points d'observation :
+{metrics["Nombre de points d'observation"]}
+
 Performance du portefeuille :
-{metrics['Performance Portefeuille']:.2%}
+{metrics["Performance Portefeuille"]:.2%}
 
 Performance du benchmark :
-{metrics['Performance Indice']:.2%}
+{metrics["Performance Indice"]:.2%}
 
 Alpha :
-{metrics['Alpha']:.2%}
+{metrics["Alpha"]:.2%}
 
-Volatilité annualisée :
-{metrics['Volatilité Portefeuille']:.2%}
+Volatilité portefeuille :
+{metrics["Volatilité Portefeuille"]:.2%}
+
+Volatilité benchmark :
+{metrics["Volatilité Indice"]:.2%}
 
 Bêta :
-{metrics['Beta']:.2f}
+{metrics["Beta"]:.2f}
+
+Corrélation :
+{metrics["Corrélation"]:.2f}
 
 Tracking Error :
-{metrics['Tracking Error']:.2%}
+{metrics["Tracking Error"]:.2%}
 
 Information Ratio :
-{metrics['Information Ratio']:.2f}
+{metrics["Information Ratio"]:.2f}
+
+Sharpe Portefeuille :
+{metrics["Sharpe Portefeuille"]:.2f}
+
+Sharpe Indice :
+{metrics["Sharpe Indice"]:.2f}
 
 Hit Ratio :
-{metrics['Hit Ratio']:.2%}
+{metrics["Hit Ratio"]:.2%}
 """
 
 st.text_area(
     "Conclusion",
     resume,
-    height=250
+    height=350
+)
+
+# --------------------------------------------------
+# DONNÉES SOURCE
+# --------------------------------------------------
+
+st.header("Données Sources")
+
+st.dataframe(
+    df,
+    use_container_width=True
 )
 
 # --------------------------------------------------
@@ -368,7 +380,7 @@ with pd.ExcelWriter(
 
     df.to_excel(
         writer,
-        sheet_name="Data",
+        sheet_name="Donnees",
         index=False
     )
 
@@ -386,56 +398,60 @@ st.download_button(
 
     file_name="Portfolio_Analytics.xlsx",
 
-    mime=(
-        "application/vnd.openxmlformats-officedocument."
-        "spreadsheetml.sheet"
-    )
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
 
 # --------------------------------------------------
-# EXPORT CSV
+# EXPORT CSV KPI
 # --------------------------------------------------
 
 csv = kpi_df.to_csv(
     index=False
-).encode("utf-8")
+)
 
 st.download_button(
-
-    label="📥 Télécharger CSV",
-
-    data=csv,
-
+    "📥 Télécharger KPI CSV",
+    csv,
     file_name="KPI.csv",
-
     mime="text/csv"
 )
 
 # --------------------------------------------------
-# POWER BI
+# EXPORT POWER BI
 # --------------------------------------------------
 
-st.header("Power BI")
+powerbi_df = pd.DataFrame({
 
-st.info(
-"""
-Power BI peut être connecté :
+    "Date":
+        df["Date"],
 
-1. Au fichier Excel exporté
-2. A une base Azure SQL
-3. A un Dataflow Power BI
+    "VL_Portefeuille":
+        df["VL_Portefeuille"],
 
-Architecture recommandée :
+    "MASI_RB":
+        df["MASI_RB"],
 
-Excel
-→ Streamlit
-→ Azure SQL
-→ Power BI
-"""
+    "Perf_Portefeuille":
+        df["Perf_Portefeuille"],
+
+    "Perf_MASI":
+        df["Perf_MASI"]
+
+})
+
+powerbi_csv = powerbi_df.to_csv(
+    index=False
+)
+
+st.download_button(
+    "📊 Télécharger Dataset Power BI",
+    powerbi_csv,
+    file_name="powerbi_dataset.csv",
+    mime="text/csv"
 )
 
 # --------------------------------------------------
-# FIN
+# PIED DE PAGE
 # --------------------------------------------------
 
 st.success(
