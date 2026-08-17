@@ -1,19 +1,15 @@
 __pycache__/
-
 *.pyc
-
-.venv/
-venv/
+*.xlsx~
+*.log
 
 .env
 
-.streamlit/
+exports/*
+reports/*
 
-exports/
-
-*.log
-
-.ipynb_checkpoints/
+.vscode/
+.idea/
 
 .DS_Store
-``
+Thumbs.db
