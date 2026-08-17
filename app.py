@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -41,8 +40,10 @@ if uploaded_file is not None:
         # --- Traitement et calcul des métriques --- #
         df['Date'] = pd.to_datetime(df['Date'])
         df.set_index('Date', inplace=True)
-        df['Prix_Portefeuille'] = df['Prix_Portefeuille'].astype(float)
-        df['Prix_MASI'] = df['Prix_MASI'].astype(float)
+
+        # Utiliser les noms de colonnes réels du fichier de l'utilisateur
+        df['Prix_Portefeuille'] = df['VL_ portefeuille_actions'].astype(float)
+        df['Prix_MASI'] = df['MAISI_RB'].astype(float)
 
         # Calcul des rendements quotidiens
         df['Rendement_Portefeuille'] = df['Prix_Portefeuille'].pct_change()
@@ -258,7 +259,7 @@ if uploaded_file is not None:
 
     except Exception as e:
         st.error(f"Une erreur est survenue lors du traitement du fichier : {e}")
-        st.info("Veuillez vérifier que votre fichier Excel est correctement formaté et qu'il contient les colonnes 'Date', 'Prix_Portefeuille' et 'Prix_MASI'.")
+        st.info("Veuillez vérifier que votre fichier Excel est correctement formaté et qu'il contient les colonnes 'Date', 'VL_ portefeuille_actions' et 'MAISI_RB'.")
 else:
     st.info("Veuillez téléverser un fichier Excel pour commencer l'analyse.")
 
