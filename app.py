@@ -182,13 +182,19 @@ def generate_pdf(kpis):
 # CHARGEMENT FICHIER
 # ==========================================================
 
-file = st.file_uploader("Importer le fichier Excel", type=["xlsx"])
+file = st.file_uploader(
+    "Importer le fichier Excel",
+    type=["xlsx"]
+)
 
 if file is None:
-    st.info("Veuillez importer un fichier Excel pour lancer l'analyse.")
+    st.info(
+        "Veuillez importer un fichier Excel pour lancer l'analyse."
+    )
     st.stop()
 
 if file:
+
     df = pd.read_excel(file)
 
     if df.empty:
@@ -200,25 +206,46 @@ if file:
         st.stop()
 
     date_col = df.columns[0]
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-    df = df.dropna(subset=[date_col]).reset_index(drop=True)
+
+    df[date_col] = pd.to_datetime(
+        df[date_col],
+        errors="coerce"
+    )
+
+    df = df.dropna(
+        subset=[date_col]
+    ).reset_index(drop=True)
 
     if df.empty:
-        st.error("La colonne de dates est vide ou invalide.")
+        st.error(
+            "La colonne de dates est vide ou invalide."
+        )
         st.stop()
-df = df.dropna(subset=[date_col]).reset_index(drop=True)
 
-ANNUAL_FACTOR, FREQUENCE = detect_frequency_factor(
-    df[date_col]
-)
+    ANNUAL_FACTOR, FREQUENCE = detect_frequency_factor(
+        df[date_col]
+    )
 
-if df.empty:
-    st.error("La colonne de dates est vide ou invalide.")
-    st.stop()
     st.success(
         f"Fréquence détectée : {FREQUENCE} | "
         f"Annualisation : {ANNUAL_FACTOR}"
+    )
+
+    # ==========================================================
+    # DETECTION AUTOMATIQUE DES COLONNES
+    # ==========================================================
+
     cols = list(df.columns)
+
+    base100_cols = [
+        c for c in cols
+        if "base" in c.lower()
+    ]
+
+    perf_cols = [
+        c for c in cols
+        if "perf" in c.lower()
+    ]
 
     # ==========================================================
     # DETECTION AUTOMATIQUE DES COLONNES
