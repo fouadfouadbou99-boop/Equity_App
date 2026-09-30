@@ -351,50 +351,25 @@ if file:
         )
     ).mean()
 
-    kpis = {
+   nom_pf = portfolio_nav.replace("Base 100", "").strip()
+nom_bm = benchmark_nav.replace("Base 100", "").strip()
 
-        "Performance Portefeuille":
-            f"{perf_pf:.2%}",
-
-        "Performance Benchmark":
-            f"{perf_bm:.2%}",
-
-        "Alpha":
-            f"{alpha:.2%}",
-
-        "Beta":
-            f"{beta:.2f}",
-
-        "Volatilité":
-            f"{volatility_pf:.2%}",
-
-        "Tracking Error":
-            f"{te:.2%}",
-
-        "Information Ratio":
-            f"{ir:.2f}",
-
-        "Sharpe":
-            f"{sharpe:.2f}",
-
-        "Sortino":
-            f"{sortino:.2f}",
-
-        "Corrélation":
-            f"{corr:.2f}",
-
-        "VaR 95%":
-            f"{var95:.2%}",
-
-        "CVaR 95%":
-            f"{cvar95:.2%}",
-
-        "Max Drawdown":
-            f"{max_dd:.2%}",
-
-        "Hit Ratio":
-            f"{hit_ratio:.2%}"
-    }
+kpis = {
+    f"Performance {nom_pf}": f"{perf_pf:.2%}",
+    f"Performance {nom_bm}": f"{perf_bm:.2%}",
+    f"Alpha {nom_pf}": f"{alpha:.2%}",
+    "Beta": f"{beta:.2f}",
+    f"Volatilité {nom_pf}": f"{volatility_pf:.2%}",
+    "Tracking Error": f"{te:.2%}",
+    "Information Ratio": f"{ir:.2f}",
+    f"Sharpe {nom_pf}": f"{sharpe:.2f}",
+    f"Sortino {nom_pf}": f"{sortino:.2f}",
+    "Corrélation": f"{corr:.2f}",
+    "VaR 95%": f"{var95:.2%}",
+    "CVaR 95%": f"{cvar95:.2%}",
+    "Max Drawdown": f"{max_dd:.2%}",
+    "Hit Ratio": f"{hit_ratio:.2%}"
+}
 
     # ======================================================
     # TABLEAU KPI
