@@ -363,8 +363,7 @@ if file:
 
     perf_pf = (df[portfolio_nav].iloc[-1] / df[portfolio_nav].iloc[0]) - 1
     perf_bm = (df[benchmark_nav].iloc[-1] / df[benchmark_nav].iloc[0]) - 1
-        alpha = perf_pf - perf_bm
-
+      
     beta = calculer_beta(
         retours_pf,
         retours_bm
