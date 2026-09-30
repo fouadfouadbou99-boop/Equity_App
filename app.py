@@ -289,21 +289,14 @@ if file:
     )
 
     # ==========================================================
-    # DETECTION AUTOMATIQUE DES COLONNES
+    # DETECTION AUTOMATIQUE DES COLONNES (CORRIGEE)
     # ==========================================================
 
     cols = list(df.columns)
+    available_cols = [c for c in cols if c != date_col]
 
-    base100_cols = [c for c in cols if "base" in c.lower()]
-    perf_cols = [c for c in cols if "perf" in c.lower()]
-
-    if len(base100_cols) < 2:
-        st.error("Le fichier doit contenir au moins deux colonnes Base 100.")
-        st.write(df.columns.tolist())
-        st.stop()
-
-    if len(perf_cols) < 2:
-        st.error("Le fichier doit contenir au moins deux colonnes de performance.")
+    if len(available_cols) < 4:
+        st.error("Le fichier doit contenir au moins 4 colonnes (Date + 2 séries de base + 2 performances).")
         st.write(df.columns.tolist())
         st.stop()
 
@@ -312,18 +305,46 @@ if file:
     col1, col2 = st.columns(2)
 
     with col1:
-        portfolio_nav = st.selectbox("Valeur / Portefeuille", base100_cols, index=0)
+        portfolio_nav = st.selectbox(
+            "Valeur / Portefeuille",
+            available_cols,
+            index=0
+        )
 
     with col2:
-        benchmark_nav = st.selectbox("Benchmark", base100_cols, index=min(1, len(base100_cols) - 1))
+        benchmark_candidates = [c for c in available_cols if c != portfolio_nav]
+        benchmark_nav = st.selectbox(
+            "Benchmark",
+            benchmark_candidates,
+            index=0
+        )
+
+    remaining_perf = [
+        c for c in available_cols
+        if c not in [portfolio_nav, benchmark_nav]
+    ]
+
+    if len(remaining_perf) < 2:
+        st.error("Le fichier doit contenir au moins deux colonnes de performance distinctes.")
+        st.write(df.columns.tolist())
+        st.stop()
 
     col3, col4 = st.columns(2)
 
     with col3:
-        portfolio_ret = st.selectbox("Performance Valeur / Portefeuille", perf_cols, index=0)
+        portfolio_ret = st.selectbox(
+            "Performance Valeur / Portefeuille",
+            remaining_perf,
+            index=0
+        )
 
     with col4:
-        benchmark_ret = st.selectbox("Performance Benchmark", perf_cols, index=min(1, len(perf_cols) - 1))
+        benchmark_ret_candidates = [c for c in remaining_perf if c != portfolio_ret]
+        benchmark_ret = st.selectbox(
+            "Performance Benchmark",
+            benchmark_ret_candidates,
+            index=0
+        )
 
     if portfolio_nav == benchmark_nav:
         st.warning(
@@ -418,15 +439,8 @@ if file:
         returns_pf > returns_bm
     ).mean()
 
-    nom_pf = portfolio_nav.replace(
-        "Base 100",
-        ""
-    ).strip()
-
-    nom_bm = benchmark_nav.replace(
-        "Base 100",
-        ""
-    ).strip()
+    nom_pf = str(portfolio_nav).strip()
+    nom_bm = str(benchmark_nav).strip()
 
     kpis = {
         "Fréquence": FREQUENCE,
