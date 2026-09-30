@@ -294,22 +294,6 @@ if file:
 
     cols = list(df.columns)
 
-    base100_cols = [
-        c for c in cols
-        if "base" in c.lower()
-    ]
-
-    perf_cols = [
-        c for c in cols
-        if "perf" in c.lower()
-    ]
-
-    # ==========================================================
-    # DETECTION AUTOMATIQUE DES COLONNES
-    # ==========================================================
-
-    cols = list(df.columns)
-
     base100_cols = [c for c in cols if "base" in c.lower()]
     perf_cols = [c for c in cols if "perf" in c.lower()]
 
