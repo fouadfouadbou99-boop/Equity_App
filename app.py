@@ -218,8 +218,8 @@ if df.empty:
     st.success(
         f"Fréquence détectée : {FREQUENCE} | "
         f"Annualisation : {ANNUAL_FACTOR}"
-    )
-cols = list(df.columns)
+    cols = list(df.columns)
+
     # ==========================================================
     # DETECTION AUTOMATIQUE DES COLONNES
     # ==========================================================
