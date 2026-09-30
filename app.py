@@ -346,7 +346,7 @@ if file:
     with col4:
         benchmark_ret = st.selectbox("Performance Benchmark", perf_cols, index=min(1, len(perf_cols) - 1))
 
-       if portfolio_nav == benchmark_nav:
+    if portfolio_nav == benchmark_nav:
         st.warning(
             "Le portefeuille et le benchmark sont identiques. Choisissez des colonnes différentes."
         )
