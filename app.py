@@ -351,10 +351,10 @@ if file:
         )
     ).mean()
 
-   nom_pf = portfolio_nav.replace("Base 100", "").strip()
-nom_bm = benchmark_nav.replace("Base 100", "").strip()
+    nom_pf = portfolio_nav.replace("Base 100", "").strip()
+    nom_bm = benchmark_nav.replace("Base 100", "").strip()
 
-kpis = {
+    kpis = {
     f"Performance {nom_pf}": f"{perf_pf:.2%}",
     f"Performance {nom_bm}": f"{perf_bm:.2%}",
     f"Alpha {nom_pf}": f"{alpha:.2%}",
