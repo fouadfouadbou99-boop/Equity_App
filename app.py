@@ -358,26 +358,29 @@ if file:
         )
         st.stop()
 
-    returns_pf = pd.to_numeric(
-        df[portfolio_ret],
+    # ==========================================================
+    # ALIGNEMENT DES SERIES DE PERFORMANCE
+    # ==========================================================
+
+    perf_df = df[[portfolio_ret, benchmark_ret]].apply(
+        pd.to_numeric,
         errors="coerce"
     ).dropna()
 
-    returns_bm = pd.to_numeric(
-        df[benchmark_ret],
-        errors="coerce"
-    ).dropna()
-
-    if len(returns_pf) < 2 or len(returns_bm) < 2:
+    if perf_df.empty or len(perf_df) < 2:
         st.error(
-            "Les colonnes de performance n'ont pas assez de données numériques. "
-            "Au moins 2 valeurs valides sont requises pour chaque performance."
+            "Les colonnes de performance sélectionnées n'ont pas assez de données numériques valides. "
+            "Au moins 2 lignes complètes sont requises pour calculer les indicateurs."
         )
         st.stop()
 
-    if returns_pf.empty or returns_bm.empty:
+    returns_pf = perf_df[portfolio_ret]
+    returns_bm = perf_df[benchmark_ret]
+
+    if len(returns_pf) < 2 or len(returns_bm) < 2:
         st.error(
-            "Les colonnes de performance sélectionnées sont vides ou non numériques."
+            "Les colonnes de performance n'ont pas assez de données numériques alignées. "
+            "Au moins 2 valeurs valides communes sont requises pour chaque série."
         )
         st.stop()
 
@@ -394,8 +397,8 @@ if file:
     alpha = perf_pf - perf_bm
 
     beta = calculate_beta(
-        returns_pf,
-        returns_bm
+        returns_pf.to_numpy(),
+        returns_bm.to_numpy()
     )
 
     volatility_pf = (
@@ -409,21 +412,21 @@ if file:
     )
 
     te = calculate_tracking_error(
-        returns_pf,
-        returns_bm
+        returns_pf.to_numpy(),
+        returns_bm.to_numpy()
     )
 
     ir = calculate_information_ratio(
-        returns_pf,
-        returns_bm
+        returns_pf.to_numpy(),
+        returns_bm.to_numpy()
     )
 
     sharpe = calculate_sharpe(
-        returns_pf
+        returns_pf.to_numpy()
     )
 
     sortino = calculate_sortino(
-        returns_pf
+        returns_pf.to_numpy()
     )
 
     corr = returns_pf.corr(
@@ -431,11 +434,11 @@ if file:
     )
 
     var95 = calculate_var(
-        returns_pf
+        returns_pf.to_numpy()
     )
 
     cvar95 = calculate_cvar(
-        returns_pf
+        returns_pf.to_numpy()
     )
 
     max_dd, dd_curve = calculate_max_drawdown(
