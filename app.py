@@ -354,15 +354,23 @@ if file:
         st.warning("Les performances du portefeuille et du benchmark sont identiques. Choisissez des colonnes différentes.")
         st.stop()
 
-    returns_pf = pd.to_numeric(df[portfolio_ret], errors="coerce").dropna()
-    returns_bm = pd.to_numeric(df[benchmark_ret], errors="coerce").dropna()
+        returns_pf = pd.to_numeric(
+        df[portfolio_ret],
+        errors="coerce"
+    ).dropna()
 
-        perf_pf = (
-    df[portfolio_nav].iloc[-1]
-    / df[portfolio_nav].iloc[0]
-) - 1
+    returns_bm = pd.to_numeric(
+        df[benchmark_ret],
+        errors="coerce"
+    ).dropna()
 
-       perf_pf = (
+    if returns_pf.empty or returns_bm.empty:
+        st.error(
+            "Les colonnes de performance sélectionnées sont vides ou non numériques."
+        )
+        st.stop()
+
+    perf_pf = (
         df[portfolio_nav].iloc[-1]
         / df[portfolio_nav].iloc[0]
     ) - 1
