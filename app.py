@@ -325,39 +325,93 @@ returns_pf = perf_df['pf'].values
 returns_bm = perf_df['bm'].values
 
 # ==========================================================
-# CALCULS DES KPI
+# CALCUL KPI
 # ==========================================================
 
-# Performance globale (NAV)
-if len(nav_pf) > 1 and len(nav_bm) > 1:
-    perf_pf_total = (nav_pf.iloc[-1] / nav_pf.iloc[0]) - 1
-    perf_bm_total = (nav_bm.iloc[-1] / nav_bm.iloc[0]) - 1
-else:
-    perf_pf_total = np.nan
-    perf_bm_total = np.nan
+perf_pf_total = (
+    nav_pf.iloc[-1]
+    / nav_pf.iloc[0]
+    - 1
+)
 
-alpha = perf_pf_total - perf_bm_total
+perf_bm_total = (
+    nav_bm.iloc[-1]
+    / nav_bm.iloc[0]
+    - 1
+)
 
-# KPI basés sur les rendements normalisés
-beta = calculate_beta(returns_pf, returns_bm)
-volatility_pf = returns_pf.std(ddof=1) * np.sqrt(ANNUAL_FACTOR)
-volatility_bm = returns_bm.std(ddof=1) * np.sqrt(ANNUAL_FACTOR)
-te = calculate_tracking_error(returns_pf, returns_bm, ANNUAL_FACTOR)
-ir = calculate_information_ratio(returns_pf, returns_bm, ANNUAL_FACTOR)
-sharpe = calculate_sharpe(returns_pf, ANNUAL_FACTOR)
-sortino = calculate_sortino(returns_pf, ANNUAL_FACTOR)
-corr = np.corrcoef(returns_pf, returns_bm)[0, 1]
-var95 = calculate_var(returns_pf)
-cvar95 = calculate_cvar(returns_pf)
+alpha = (
+    perf_pf_total
+    - perf_bm_total
+)
 
-# Drawdown (NAV)
-max_dd, dd_curve = calculate_max_drawdown(nav_pf)
+beta = calculate_beta(
+    returns_pf,
+    returns_bm
+)
 
-# Hit ratio
-hit_ratio = (returns_pf > returns_bm).mean()
+volatility_pf = (
+    np.std(
+        returns_pf,
+        ddof=1
+    )
+    * np.sqrt(ANNUAL_FACTOR)
+)
 
-nom_pf = str(portfolio_nav).strip()
-nom_bm = str(benchmark_nav).strip()
+volatility_bm = (
+    np.std(
+        returns_bm,
+        ddof=1
+    )
+    * np.sqrt(ANNUAL_FACTOR)
+)
+
+te = calculate_tracking_error(
+    returns_pf,
+    returns_bm,
+    ANNUAL_FACTOR
+)
+
+ir = calculate_information_ratio(
+    alpha,
+    te
+)
+
+sharpe = calculate_sharpe(
+    returns_pf,
+    ANNUAL_FACTOR
+)
+
+sortino = calculate_sortino(
+    returns_pf,
+    ANNUAL_FACTOR
+)
+
+corr = calculate_correlation(
+    returns_pf,
+    returns_bm
+)
+
+var95 = calculate_var(
+    returns_pf
+)
+
+cvar95 = calculate_cvar(
+    returns_pf
+)
+
+max_dd, dd_curve = calculate_max_drawdown(
+    nav_pf
+)
+
+active_returns = (
+    returns_pf
+    - returns_bm
+)
+
+hit_ratio = (
+    active_returns > 0
+).mean()
 
 # ==========================================================
 # CONSTRUCTION KPI
