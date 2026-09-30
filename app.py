@@ -362,6 +362,11 @@ if file:
     / df[portfolio_nav].iloc[0]
 ) - 1
 
+       perf_pf = (
+        df[portfolio_nav].iloc[-1]
+        / df[portfolio_nav].iloc[0]
+    ) - 1
+
     perf_bm = (
         df[benchmark_nav].iloc[-1]
         / df[benchmark_nav].iloc[0]
