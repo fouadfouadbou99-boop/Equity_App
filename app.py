@@ -219,7 +219,7 @@ if df.empty:
         f"Fréquence détectée : {FREQUENCE} | "
         f"Annualisation : {ANNUAL_FACTOR}"
     )
-
+cols = list(df.columns)
     # ==========================================================
     # DETECTION AUTOMATIQUE DES COLONNES
     # ==========================================================
