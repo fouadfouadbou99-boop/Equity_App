@@ -346,11 +346,14 @@ if file:
     with col4:
         benchmark_ret = st.selectbox("Performance Benchmark", perf_cols, index=min(1, len(perf_cols) - 1))
 
-    if portfolio_nav == benchmark_nav:
-        st.warning("Le portefeuille et le benchmark sont identiques. Choisissez des colonnes différentes.")
+    
+        if portfolio_nav == benchmark_nav:
+        st.warning(
+            "Le portefeuille et le benchmark sont identiques. Choisissez des colonnes différentes."
+        )
         st.stop()
 
-       if portfolio_ret == benchmark_ret:
+    if portfolio_ret == benchmark_ret:
         st.warning(
             "Les performances du portefeuille et du benchmark sont identiques. Choisissez des colonnes différentes."
         )
@@ -448,24 +451,6 @@ if file:
     ).strip()
 
     kpis = {
-        "Fréquence": FREQUENCE,
-        "Annualisation": ANNUAL_FACTOR,
-        f"Performance {nom_pf}": f"{perf_pf:.2%}",
-        f"Performance {nom_bm}": f"{perf_bm:.2%}",
-        f"Alpha {nom_pf}": f"{alpha:.2%}",
-        "Beta": f"{beta:.2f}",
-        f"Volatilité {nom_pf}": f"{volatility_pf:.2%}",
-        f"Volatilité {nom_bm}": f"{volatility_bm:.2%}",
-        "Tracking Error": f"{te:.2%}",
-        "Information Ratio": f"{ir:.2f}",
-        f"Sharpe {nom_pf}": f"{sharpe:.2f}",
-        f"Sortino {nom_pf}": f"{sortino:.2f}",
-        "Corrélation": f"{corr:.2f}",
-        "VaR 95%": f"{var95:.2%}",
-        "CVaR 95%": f"{cvar95:.2%}",
-        "Max Drawdown": f"{max_dd:.2%}",
-        "Hit Ratio": f"{hit_ratio:.2%}"
-    }
         "Fréquence": FREQUENCE,
         "Annualisation": ANNUAL_FACTOR,
         f"Performance {nom_pf}": f"{perf_pf:.2%}",
