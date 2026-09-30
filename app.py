@@ -74,10 +74,11 @@ st.title("📈 Dashboard Universel de Performance Financière")
 st.markdown("---")
 
 # ==========================================================
-# FONCTIONS KPI
+# KPI
 # ==========================================================
 
 def calculate_beta(port, bench):
+
     if len(port) < 2 or len(bench) < 2:
         return np.nan
 
@@ -90,84 +91,167 @@ def calculate_beta(port, bench):
     return covariance / variance
 
 
-def calculate_tracking_error(port, bench, annual_factor):
+def calculate_tracking_error(
+    port,
+    bench,
+    annual_factor
+):
+
     if len(port) < 2 or len(bench) < 2:
         return np.nan
-    
-    diff = port - bench
-    return diff.std(ddof=1) * np.sqrt(annual_factor)
+
+    active_returns = port - bench
+
+    return (
+        np.std(
+            active_returns,
+            ddof=1
+        )
+        * np.sqrt(annual_factor)
+    )
 
 
-def calculate_information_ratio(port, bench, annual_factor):
-    if len(port) < 2 or len(bench) < 2:
+def calculate_information_ratio(
+    alpha_total,
+    tracking_error
+):
+
+    if tracking_error == 0:
         return np.nan
-    
-    active = port - bench
-    alpha = active.mean() * annual_factor
-    te = active.std(ddof=1) * np.sqrt(annual_factor)
 
-    if te == 0:
-        return np.nan
-
-    return alpha / te
+    return alpha_total / tracking_error
 
 
-def calculate_sharpe(returns, annual_factor, rf=0):
+def calculate_sharpe(
+    returns,
+    annual_factor,
+    rf=0
+):
+
     if len(returns) < 2:
         return np.nan
 
-    annual_return = returns.mean() * annual_factor
-    annual_vol = returns.std(ddof=1) * np.sqrt(annual_factor)
+    annual_return = (
+        np.mean(returns)
+        * annual_factor
+    )
 
-    if annual_vol == 0:
+    annual_volatility = (
+        np.std(
+            returns,
+            ddof=1
+        )
+        * np.sqrt(annual_factor)
+    )
+
+    if annual_volatility == 0:
         return np.nan
 
-    return (annual_return - rf) / annual_vol
+    return (
+        annual_return - rf
+    ) / annual_volatility
 
 
-def calculate_sortino(returns, annual_factor, rf=0):
+def calculate_sortino(
+    returns,
+    annual_factor,
+    rf=0
+):
+
     if len(returns) < 2:
         return np.nan
 
-    downside = returns[returns < 0]
+    downside = returns[
+        returns < 0
+    ]
 
-    if len(downside) < 1:
+    if len(downside) < 2:
         return np.nan
 
-    downside_vol = downside.std(ddof=1) * np.sqrt(annual_factor) if len(downside) > 1 else 0
-    annual_return = returns.mean() * annual_factor
+    downside_volatility = (
+        np.std(
+            downside,
+            ddof=1
+        )
+        * np.sqrt(annual_factor)
+    )
 
-    if downside_vol == 0:
+    annual_return = (
+        np.mean(returns)
+        * annual_factor
+    )
+
+    if downside_volatility == 0:
         return np.nan
 
-    return (annual_return - rf) / downside_vol
+    return (
+        annual_return - rf
+    ) / downside_volatility
 
 
-def calculate_max_drawdown(nav_series):
-    if len(nav_series) < 2:
-        return np.nan, pd.Series(dtype=float)
+def calculate_correlation(
+    port,
+    bench
+):
 
-    nav_series = pd.to_numeric(nav_series, errors="coerce").dropna()
-    if len(nav_series) < 2:
-        return np.nan, pd.Series(dtype=float)
-    
-    roll_max = nav_series.cummax()
-    drawdown = (nav_series / roll_max) - 1
+    if len(port) < 2 or len(bench) < 2:
+        return np.nan
 
-    return drawdown.min(), drawdown
+    return pd.Series(port).corr(
+        pd.Series(bench)
+    )
 
 
-def calculate_var(returns, confidence=0.95):
+def calculate_var(
+    returns,
+    confidence=0.95
+):
+
     if len(returns) == 0:
         return np.nan
-    return np.percentile(returns, (1 - confidence) * 100)
+
+    return np.percentile(
+        returns,
+        (1 - confidence) * 100
+    )
 
 
-def calculate_cvar(returns, confidence=0.95):
+def calculate_cvar(
+    returns,
+    confidence=0.95
+):
+
     if len(returns) == 0:
         return np.nan
-    var = calculate_var(returns, confidence)
-    return returns[returns <= var].mean()
+
+    var = calculate_var(
+        returns,
+        confidence
+    )
+
+    return np.mean(
+        returns[
+            returns <= var
+        ]
+    )
+
+
+def calculate_max_drawdown(
+    nav_series
+):
+
+    cumulative_max = nav_series.cummax()
+
+    drawdown = (
+        nav_series
+        / cumulative_max
+        - 1
+    )
+
+    return (
+        drawdown.min(),
+        drawdown
+    )
 
 # ==========================================================
 # EXPORT EXCEL
