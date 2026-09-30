@@ -215,12 +215,16 @@ ANNUAL_FACTOR, FREQUENCE = detect_frequency_factor(
 if df.empty:
     st.error("La colonne de dates est vide ou invalide.")
     st.stop()
+    st.success(
+        f"Fréquence détectée : {FREQUENCE} | "
+        f"Annualisation : {ANNUAL_FACTOR}"
+    )
 
-st.success(
-    f"Fréquence détectée : {FREQUENCE} | "
-    f"Annualisation : {ANNUAL_FACTOR}"
-)
+    # ==========================================================
+    # DETECTION AUTOMATIQUE DES COLONNES
+    # ==========================================================
 
+    cols = list(df.columns)
     # ==========================================================
     # DETECTION AUTOMATIQUE DES COLONNES
     # ==========================================================
