@@ -56,11 +56,12 @@ st.title("📈 Dashboard Universel de Performance Financière")
 # ==========================================================
 
 def calculate_beta(port, bench):
-    if len(port) == 0 or len(bench) == 0:
+
+    if len(port) < 2 or len(bench) < 2:
         return np.nan
 
     covariance = np.cov(port, bench)[0, 1]
-    variance = np.var(bench)
+    variance = np.var(bench, ddof=1)
 
     if variance == 0:
         return np.nan
@@ -69,19 +70,34 @@ def calculate_beta(port, bench):
 
 
 def calculate_tracking_error(port, bench):
+
     diff = port - bench
-    if len(diff) == 0:
+
+    if len(diff) < 2:
         return np.nan
-    return diff.std() * np.sqrt(52)
+
+    return (
+        diff.std(ddof=1)
+        * np.sqrt(ANNUAL_FACTOR)
+    )
 
 
 def calculate_information_ratio(port, bench):
+
     active = port - bench
-    if len(active) == 0:
+
+    if len(active) < 2:
         return np.nan
 
-    alpha = active.mean() * 52
-    te = active.std() * np.sqrt(52)
+    alpha = (
+        active.mean()
+        * ANNUAL_FACTOR
+    )
+
+    te = (
+        active.std(ddof=1)
+        * np.sqrt(ANNUAL_FACTOR)
+    )
 
     if te == 0:
         return np.nan
@@ -90,53 +106,94 @@ def calculate_information_ratio(port, bench):
 
 
 def calculate_sharpe(returns, rf=0):
-    if len(returns) == 0:
+
+    if len(returns) < 2:
         return np.nan
 
-    vol = returns.std() * np.sqrt(52)
-    ret = returns.mean() * 52
+    annual_return = (
+        returns.mean()
+        * ANNUAL_FACTOR
+    )
 
-    if vol == 0:
+    annual_vol = (
+        returns.std(ddof=1)
+        * np.sqrt(ANNUAL_FACTOR)
+    )
+
+    if annual_vol == 0:
         return np.nan
 
-    return (ret - rf) / vol
+    return (
+        annual_return - rf
+    ) / annual_vol
 
 
 def calculate_sortino(returns, rf=0):
-    if len(returns) == 0:
+
+    if len(returns) < 2:
         return np.nan
 
     downside = returns[returns < 0]
-    downside_std = downside.std() * np.sqrt(52)
-    annual_return = returns.mean() * 52
 
-    if downside_std == 0:
+    if len(downside) < 2:
         return np.nan
 
-    return (annual_return - rf) / downside_std
+    downside_vol = (
+        downside.std(ddof=1)
+        * np.sqrt(ANNUAL_FACTOR)
+    )
+
+    annual_return = (
+        returns.mean()
+        * ANNUAL_FACTOR
+    )
+
+    if downside_vol == 0:
+        return np.nan
+
+    return (
+        annual_return - rf
+    ) / downside_vol
 
 
 def calculate_max_drawdown(series):
+
     if len(series) == 0:
         return np.nan, pd.Series(dtype=float)
 
     roll_max = series.cummax()
-    drawdown = series / roll_max - 1.0
+
+    drawdown = (
+        series / roll_max
+    ) - 1
+
     return drawdown.min(), drawdown
 
 
 def calculate_var(returns, confidence=0.95):
+
     if len(returns) == 0:
         return np.nan
-    return np.percentile(returns, (1 - confidence) * 100)
+
+    return np.percentile(
+        returns,
+        (1 - confidence) * 100
+    )
 
 
 def calculate_cvar(returns, confidence=0.95):
+
     if len(returns) == 0:
         return np.nan
-    var = calculate_var(returns, confidence)
-    return returns[returns <= var].mean()
 
+    var = calculate_var(
+        returns,
+        confidence
+    )
+
+    return returns[
+        returns <= var
+    ].mean()
 
 # ==========================================================
 # EXPORT EXCEL
