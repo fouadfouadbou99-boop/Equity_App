@@ -524,13 +524,6 @@ commentaire = f"""
     Le drawdown maximal observé est de {max_dd:.2%}.
 """
 
-    Le portefeuille affiche une
-    performance cumulée de
-    {perf_pf:.2%}
-    contre
-    {perf_bm:.2%}
-    pour le benchmark.
-
     L'alpha ressort à
     {alpha:.2%}.
 
