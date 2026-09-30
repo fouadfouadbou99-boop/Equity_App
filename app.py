@@ -13,12 +13,12 @@ from reportlab.platypus import (
 )
 
 from reportlab.lib.styles import getSampleStyleSheet
+
 # ==========================================================
 # DETECTION AUTOMATIQUE DE LA FREQUENCE
 # ==========================================================
 
 def detect_frequency_factor(dates):
-
     dates = pd.to_datetime(
         dates,
         errors="coerce"
@@ -39,6 +39,24 @@ def detect_frequency_factor(dates):
         return 4, "Trimestriel"
     else:
         return 1, "Annuel"
+
+# ==========================================================
+# NORMALISATION DES RENDEMENTS
+# ==========================================================
+
+def normalize_returns(series):
+    """
+    Normalise les rendements.
+    Si max > 1, suppose que c'est des pourcentages (100 = 100%)
+    Si max <= 1, suppose que ce sont des décimales (0.5 = 50%)
+    """
+    max_val = series.abs().max()
+    
+    if max_val > 1:
+        # Probablement des pourcentages, diviser par 100
+        return series / 100
+    return series
+
 # ==========================================================
 # CONFIGURATION
 # ==========================================================
@@ -49,14 +67,13 @@ st.set_page_config(
 )
 
 st.title("📈 Dashboard Universel de Performance Financière")
-
+st.markdown("---")
 
 # ==========================================================
 # FONCTIONS KPI
 # ==========================================================
 
 def calculate_beta(port, bench):
-
     if len(port) < 2 or len(bench) < 2:
         return np.nan
 
@@ -69,35 +86,23 @@ def calculate_beta(port, bench):
     return covariance / variance
 
 
-def calculate_tracking_error(port, bench):
-
+def calculate_tracking_error(port, bench, annual_factor):
     diff = port - bench
 
     if len(diff) < 2:
         return np.nan
 
-    return (
-        diff.std(ddof=1)
-        * np.sqrt(ANNUAL_FACTOR)
-    )
+    return diff.std(ddof=1) * np.sqrt(annual_factor)
 
 
-def calculate_information_ratio(port, bench):
-
+def calculate_information_ratio(port, bench, annual_factor):
     active = port - bench
 
     if len(active) < 2:
         return np.nan
 
-    alpha = (
-        active.mean()
-        * ANNUAL_FACTOR
-    )
-
-    te = (
-        active.std(ddof=1)
-        * np.sqrt(ANNUAL_FACTOR)
-    )
+    alpha = active.mean() * annual_factor
+    te = active.std(ddof=1) * np.sqrt(annual_factor)
 
     if te == 0:
         return np.nan
@@ -105,31 +110,20 @@ def calculate_information_ratio(port, bench):
     return alpha / te
 
 
-def calculate_sharpe(returns, rf=0):
-
+def calculate_sharpe(returns, annual_factor, rf=0):
     if len(returns) < 2:
         return np.nan
 
-    annual_return = (
-        returns.mean()
-        * ANNUAL_FACTOR
-    )
-
-    annual_vol = (
-        returns.std(ddof=1)
-        * np.sqrt(ANNUAL_FACTOR)
-    )
+    annual_return = returns.mean() * annual_factor
+    annual_vol = returns.std(ddof=1) * np.sqrt(annual_factor)
 
     if annual_vol == 0:
         return np.nan
 
-    return (
-        annual_return - rf
-    ) / annual_vol
+    return (annual_return - rf) / annual_vol
 
 
-def calculate_sortino(returns, rf=0):
-
+def calculate_sortino(returns, annual_factor, rf=0):
     if len(returns) < 2:
         return np.nan
 
@@ -138,62 +132,38 @@ def calculate_sortino(returns, rf=0):
     if len(downside) < 2:
         return np.nan
 
-    downside_vol = (
-        downside.std(ddof=1)
-        * np.sqrt(ANNUAL_FACTOR)
-    )
-
-    annual_return = (
-        returns.mean()
-        * ANNUAL_FACTOR
-    )
+    downside_vol = downside.std(ddof=1) * np.sqrt(annual_factor)
+    annual_return = returns.mean() * annual_factor
 
     if downside_vol == 0:
         return np.nan
 
-    return (
-        annual_return - rf
-    ) / downside_vol
+    return (annual_return - rf) / downside_vol
 
 
 def calculate_max_drawdown(series):
-
     if len(series) == 0:
         return np.nan, pd.Series(dtype=float)
 
     roll_max = series.cummax()
-
-    drawdown = (
-        series / roll_max
-    ) - 1
+    drawdown = (series / roll_max) - 1
 
     return drawdown.min(), drawdown
 
 
 def calculate_var(returns, confidence=0.95):
-
     if len(returns) == 0:
         return np.nan
 
-    return np.percentile(
-        returns,
-        (1 - confidence) * 100
-    )
+    return np.percentile(returns, (1 - confidence) * 100)
 
 
 def calculate_cvar(returns, confidence=0.95):
-
     if len(returns) == 0:
         return np.nan
 
-    var = calculate_var(
-        returns,
-        confidence
-    )
-
-    return returns[
-        returns <= var
-    ].mean()
+    var = calculate_var(returns, confidence)
+    return returns[returns <= var].mean()
 
 # ==========================================================
 # EXPORT EXCEL
@@ -224,11 +194,12 @@ def generate_pdf(kpis):
     styles = getSampleStyleSheet()
     elems = []
 
-    elems.append(Paragraph("Rapport de Performance", styles["Title"]))
+    elems.append(Paragraph("Rapport de Performance Financière", styles["Title"]))
     elems.append(Spacer(1, 12))
 
     for k, v in kpis.items():
-        elems.append(Paragraph(f"{k}: {v}", styles["BodyText"]))
+        elems.append(Paragraph(f"<b>{k}</b>: {v}", styles["BodyText"]))
+        elems.append(Spacer(1, 6))
 
     doc.build(elems)
     buffer.seek(0)
@@ -240,73 +211,67 @@ def generate_pdf(kpis):
 # ==========================================================
 
 file = st.file_uploader(
-    "Importer le fichier Excel",
-    type=["xlsx"]
+    "📁 Importer votre fichier Excel",
+    type=["xlsx"],
+    help="Format requis: Date + 2 colonnes Base 100 + 2 colonnes Performance"
 )
 
 if file is None:
-    st.info(
-        "Veuillez importer un fichier Excel pour lancer l'analyse."
-    )
+    st.info("👉 Veuillez importer un fichier Excel pour lancer l'analyse.")
     st.stop()
 
 if file:
-
-    df = pd.read_excel(file)
+    try:
+        df = pd.read_excel(file)
+    except Exception as e:
+        st.error(f"❌ Erreur de lecture du fichier: {str(e)}")
+        st.stop()
 
     if df.empty:
-        st.error("Le fichier Excel est vide.")
+        st.error("❌ Le fichier Excel est vide.")
         st.stop()
 
     if df.columns.empty:
-        st.error("Le fichier Excel ne contient aucune colonne.")
+        st.error("❌ Le fichier Excel ne contient aucune colonne.")
         st.stop()
 
     date_col = df.columns[0]
 
-    df[date_col] = pd.to_datetime(
-        df[date_col],
-        errors="coerce"
-    )
-
-    df = df.dropna(
-        subset=[date_col]
-    ).reset_index(drop=True)
-
-    if df.empty:
-        st.error(
-            "La colonne de dates est vide ou invalide."
-        )
+    try:
+        df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+    except Exception as e:
+        st.error(f"❌ Erreur de conversion des dates: {str(e)}")
         st.stop()
 
-    ANNUAL_FACTOR, FREQUENCE = detect_frequency_factor(
-        df[date_col]
-    )
+    df = df.dropna(subset=[date_col]).reset_index(drop=True)
 
-    st.success(
-        f"Fréquence détectée : {FREQUENCE} | "
-        f"Annualisation : {ANNUAL_FACTOR}"
-    )
+    if df.empty:
+        st.error("❌ La colonne de dates est vide ou invalide.")
+        st.stop()
+
+    ANNUAL_FACTOR, FREQUENCE = detect_frequency_factor(df[date_col])
+
+    st.success(f"✅ Fréquence détectée : **{FREQUENCE}** | Annualisation : **{ANNUAL_FACTOR}**")
 
     # ==========================================================
-    # DETECTION AUTOMATIQUE DES COLONNES (CORRIGEE)
+    # DETECTION AUTOMATIQUE DES COLONNES
     # ==========================================================
 
     cols = list(df.columns)
     available_cols = [c for c in cols if c != date_col]
 
     if len(available_cols) < 4:
-        st.error("Le fichier doit contenir au moins 4 colonnes (Date + 2 séries de base + 2 performances).")
-        st.write(df.columns.tolist())
+        st.error("❌ Le fichier doit contenir au moins 4 colonnes (Date + 2 séries Base 100 + 2 Performance).")
+        st.info(f"Colonnes détectées: {available_cols}")
         st.stop()
 
-    st.subheader("Paramétrage de l'analyse")
+    st.subheader("⚙️ Paramétrage de l'analyse")
 
     col1, col2 = st.columns(2)
 
     with col1:
         portfolio_nav = st.selectbox(
-            "Valeur / Portefeuille",
+            "📊 Valeur / Portefeuille (Base 100)",
             available_cols,
             index=0
         )
@@ -314,9 +279,9 @@ if file:
     with col2:
         benchmark_candidates = [c for c in available_cols if c != portfolio_nav]
         benchmark_nav = st.selectbox(
-            "Benchmark",
+            "📈 Benchmark (Base 100)",
             benchmark_candidates,
-            index=0
+            index=0 if len(benchmark_candidates) > 0 else None
         )
 
     remaining_perf = [
@@ -325,15 +290,14 @@ if file:
     ]
 
     if len(remaining_perf) < 2:
-        st.error("Le fichier doit contenir au moins deux colonnes de performance distinctes.")
-        st.write(df.columns.tolist())
+        st.error("❌ Le fichier doit contenir au moins deux colonnes de performance distinctes.")
         st.stop()
 
     col3, col4 = st.columns(2)
 
     with col3:
         portfolio_ret = st.selectbox(
-            "Performance Valeur / Portefeuille",
+            "📉 Performance Portefeuille",
             remaining_perf,
             index=0
         )
@@ -341,25 +305,21 @@ if file:
     with col4:
         benchmark_ret_candidates = [c for c in remaining_perf if c != portfolio_ret]
         benchmark_ret = st.selectbox(
-            "Performance Benchmark",
+            "📈 Performance Benchmark",
             benchmark_ret_candidates,
-            index=0
+            index=0 if len(benchmark_ret_candidates) > 0 else None
         )
 
     if portfolio_nav == benchmark_nav:
-        st.warning(
-            "Le portefeuille et le benchmark sont identiques. Choisissez des colonnes différentes."
-        )
+        st.warning("⚠️ Le portefeuille et le benchmark sont identiques.")
         st.stop()
 
     if portfolio_ret == benchmark_ret:
-        st.warning(
-            "Les performances du portefeuille et du benchmark sont identiques. Choisissez des colonnes différentes."
-        )
+        st.warning("⚠️ Les performances sont identiques.")
         st.stop()
 
     # ==========================================================
-    # ALIGNEMENT DES SERIES DE PERFORMANCE
+    # ALIGNEMENT ET NORMALISATION DES SERIES
     # ==========================================================
 
     perf_df = df[[portfolio_ret, benchmark_ret]].apply(
@@ -368,114 +328,85 @@ if file:
     ).dropna()
 
     if perf_df.empty or len(perf_df) < 2:
-        st.error(
-            "Les colonnes de performance sélectionnées n'ont pas assez de données numériques valides. "
-            "Au moins 2 lignes complètes sont requises pour calculer les indicateurs."
-        )
+        st.error("❌ Pas assez de données numériques valides.")
         st.stop()
 
-    returns_pf = perf_df[portfolio_ret]
-    returns_bm = perf_df[benchmark_ret]
+    returns_pf = perf_df[portfolio_ret].values
+    returns_bm = perf_df[benchmark_ret].values
 
-    if len(returns_pf) < 2 or len(returns_bm) < 2:
-        st.error(
-            "Les colonnes de performance n'ont pas assez de données numériques alignées. "
-            "Au moins 2 valeurs valides communes sont requises pour chaque série."
-        )
-        st.stop()
+    # Normalisation automatique
+    returns_pf_norm = normalize_returns(pd.Series(returns_pf)).values
+    returns_bm_norm = normalize_returns(pd.Series(returns_bm)).values
 
-    perf_pf = (
-        df[portfolio_nav].iloc[-1]
-        / df[portfolio_nav].iloc[0]
-    ) - 1
+    # Calcul de la performance globale avec les colonnes Base 100
+    nav_pf = pd.to_numeric(df[portfolio_nav], errors="coerce").dropna()
+    nav_bm = pd.to_numeric(df[benchmark_nav], errors="coerce").dropna()
 
-    perf_bm = (
-        df[benchmark_nav].iloc[-1]
-        / df[benchmark_nav].iloc[0]
-    ) - 1
+    if len(nav_pf) > 1 and len(nav_bm) > 1:
+        perf_pf = (nav_pf.iloc[-1] / nav_pf.iloc[0]) - 1
+        perf_bm = (nav_bm.iloc[-1] / nav_bm.iloc[0]) - 1
+    else:
+        perf_pf = np.nan
+        perf_bm = np.nan
 
     alpha = perf_pf - perf_bm
 
-    beta = calculate_beta(
-        returns_pf.to_numpy(),
-        returns_bm.to_numpy()
-    )
+    # ==========================================================
+    # CALCULS DES KPI
+    # ==========================================================
 
-    volatility_pf = (
-        returns_pf.std(ddof=1)
-        * np.sqrt(ANNUAL_FACTOR)
-    )
+    beta = calculate_beta(returns_pf_norm, returns_bm_norm)
 
-    volatility_bm = (
-        returns_bm.std(ddof=1)
-        * np.sqrt(ANNUAL_FACTOR)
-    )
+    volatility_pf = returns_pf_norm.std(ddof=1) * np.sqrt(ANNUAL_FACTOR)
+    volatility_bm = returns_bm_norm.std(ddof=1) * np.sqrt(ANNUAL_FACTOR)
 
-    te = calculate_tracking_error(
-        returns_pf.to_numpy(),
-        returns_bm.to_numpy()
-    )
+    te = calculate_tracking_error(returns_pf_norm, returns_bm_norm, ANNUAL_FACTOR)
+    ir = calculate_information_ratio(returns_pf_norm, returns_bm_norm, ANNUAL_FACTOR)
 
-    ir = calculate_information_ratio(
-        returns_pf.to_numpy(),
-        returns_bm.to_numpy()
-    )
+    sharpe = calculate_sharpe(returns_pf_norm, ANNUAL_FACTOR)
+    sortino = calculate_sortino(returns_pf_norm, ANNUAL_FACTOR)
 
-    sharpe = calculate_sharpe(
-        returns_pf.to_numpy()
-    )
+    corr = np.corrcoef(returns_pf_norm, returns_bm_norm)[0, 1]
 
-    sortino = calculate_sortino(
-        returns_pf.to_numpy()
-    )
+    var95 = calculate_var(returns_pf_norm)
+    cvar95 = calculate_cvar(returns_pf_norm)
 
-    corr = returns_pf.corr(
-        returns_bm
-    )
+    max_dd, dd_curve = calculate_max_drawdown(nav_pf)
 
-    var95 = calculate_var(
-        returns_pf.to_numpy()
-    )
-
-    cvar95 = calculate_cvar(
-        returns_pf.to_numpy()
-    )
-
-    max_dd, dd_curve = calculate_max_drawdown(
-        df[portfolio_nav]
-    )
-
-    hit_ratio = (
-        returns_pf > returns_bm
-    ).mean()
+    hit_ratio = (returns_pf_norm > returns_bm_norm).mean()
 
     nom_pf = str(portfolio_nav).strip()
     nom_bm = str(benchmark_nav).strip()
 
-    kpis = {
-        "Fréquence": FREQUENCE,
-        "Annualisation": ANNUAL_FACTOR,
-        f"Performance {nom_pf}": f"{perf_pf:.2%}",
-        f"Performance {nom_bm}": f"{perf_bm:.2%}",
-        f"Alpha {nom_pf}": f"{alpha:.2%}",
-        "Beta": f"{beta:.2f}",
-        f"Volatilité {nom_pf}": f"{volatility_pf:.2%}",
-        f"Volatilité {nom_bm}": f"{volatility_bm:.2%}",
-        "Tracking Error": f"{te:.2%}",
-        "Information Ratio": f"{ir:.2f}",
-        f"Sharpe {nom_pf}": f"{sharpe:.2f}",
-        f"Sortino {nom_pf}": f"{sortino:.2f}",
-        "Corrélation": f"{corr:.2f}",
-        "VaR 95%": f"{var95:.2%}",
-        "CVaR 95%": f"{cvar95:.2%}",
-        "Max Drawdown": f"{max_dd:.2%}",
-        "Hit Ratio": f"{hit_ratio:.2%}"
-    }
-    # ======================================================
-    # TABLEAU KPI
-    # ======================================================
+    # ==========================================================
+    # CONSTRUCTION DU DICTIONNAIRE KPI
+    # ==========================================================
 
-    st.header("Indicateurs Clés")
+    kpis = {
+        "📅 Fréquence": FREQUENCE,
+        "📊 Annualisation": ANNUAL_FACTOR,
+        f"📈 Performance {nom_pf}": f"{perf_pf:.2%}",
+        f"📈 Performance {nom_bm}": f"{perf_bm:.2%}",
+        f"🎯 Alpha": f"{alpha:.2%}",
+        f"📉 Beta": f"{beta:.2f}",
+        f"📊 Volatilité {nom_pf}": f"{volatility_pf:.2%}",
+        f"📊 Volatilité {nom_bm}": f"{volatility_bm:.2%}",
+        "🔍 Tracking Error": f"{te:.2%}",
+        "💡 Information Ratio": f"{ir:.2f}",
+        f"📉 Sharpe {nom_pf}": f"{sharpe:.2f}",
+        f"📉 Sortino {nom_pf}": f"{sortino:.2f}",
+        "🔗 Corrélation": f"{corr:.2f}",
+        "⚠️ VaR 95%": f"{var95:.2%}",
+        "⚠️ CVaR 95%": f"{cvar95:.2%}",
+        "📉 Max Drawdown": f"{max_dd:.2%}",
+        "🎯 Hit Ratio": f"{hit_ratio:.2%}"
+    }
+
+    # ==========================================================
+    # AFFICHAGE DES KPI
+    # ==========================================================
+
+    st.header("📊 Indicateurs Clés de Performance")
 
     metrics = st.columns(4)
     compteur = 0
@@ -484,135 +415,139 @@ if file:
         metrics[compteur % 4].metric(k, v)
         compteur += 1
 
-    # ======================================================
-    # TABLEAU KPI DETAILLE
-    # ======================================================
+    # ==========================================================
+    # TABLEAU DETAILLE
+    # ==========================================================
 
-    st.header("Tableau des Indicateurs")
-    st.dataframe(
-        pd.DataFrame(kpis.items(), columns=["Indicateur", "Valeur"]),
-        use_container_width=True
-    )
+    st.header("📋 Tableau des Indicateurs")
+    kpi_df = pd.DataFrame(list(kpis.items()), columns=["Indicateur", "Valeur"])
+    st.dataframe(kpi_df, use_container_width=True, hide_index=True)
 
-    # ======================================================
-    # GRAPHIQUE BASE 100
-    # ======================================================
+    # ==========================================================
+    # GRAPHIQUES
+    # ==========================================================
 
-    st.header("Evolution Base 100")
-    fig = px.line(df, x=date_col, y=[portfolio_nav, benchmark_nav])
-    st.plotly_chart(fig, use_container_width=True)
+    st.header("📈 Visualisations")
 
-    # ======================================================
-    # PERFORMANCE HEBDOMADAIRE
-    # ======================================================
+    col_graph1, col_graph2 = st.columns(2)
 
-    st.header("Performances Hebdomadaires")
-    fig2 = px.bar(df, x=date_col, y=[portfolio_ret, benchmark_ret])
-    st.plotly_chart(fig2, use_container_width=True)
-
-    # ======================================================
-    # DRAWDOWN
-    # ======================================================
-
-    st.header("Drawdown")
-    fig_dd = go.Figure()
-    fig_dd.add_trace(
-        go.Scatter(
-            x=df[date_col],
-            y=dd_curve,
-            fill='tozeroy',
-            name="Drawdown"
+    with col_graph1:
+        st.subheader("Évolution Base 100")
+        fig = px.line(
+            df,
+            x=date_col,
+            y=[portfolio_nav, benchmark_nav],
+            title=f"{nom_pf} vs {nom_bm}",
+            labels={date_col: "Date", "value": "Valeur", "variable": "Série"}
         )
-    )
-    st.plotly_chart(fig_dd, use_container_width=True)
+        fig.update_layout(hovermode="x unified")
+        st.plotly_chart(fig, use_container_width=True)
 
-    # ======================================================
-    # DISTRIBUTION
-    # ======================================================
+    with col_graph2:
+        st.subheader("Performances Périodiques")
+        fig2 = px.bar(
+            df,
+            x=date_col,
+            y=[portfolio_ret, benchmark_ret],
+            title="Comparaison Rendements",
+            labels={date_col: "Date", "value": "Rendement", "variable": "Série"},
+            barmode="group"
+        )
+        st.plotly_chart(fig2, use_container_width=True)
 
-    st.header("Distribution des Rendements")
-    fig_hist = px.histogram(returns_pf, nbins=20)
-    st.plotly_chart(fig_hist, use_container_width=True)
+    col_graph3, col_graph4 = st.columns(2)
 
-    # ======================================================
-    # COMMENTAIRES IA
-    # ======================================================
+    with col_graph3:
+        st.subheader("Drawdown")
+        fig_dd = go.Figure()
+        fig_dd.add_trace(
+            go.Scatter(
+                x=df[date_col],
+                y=dd_curve * 100,
+                fill='tozeroy',
+                name="Drawdown (%)",
+                line=dict(color='red')
+            )
+        )
+        fig_dd.update_layout(title="Évolution du Drawdown", xaxis_title="Date", yaxis_title="Drawdown (%)")
+        st.plotly_chart(fig_dd, use_container_width=True)
 
-    st.header("Commentaires Automatiques")
-    commentaire = (
-        f"{nom_pf} : Performance {perf_pf:.2%} | "
-        f"{nom_bm} : Performance {perf_bm:.2%} | "
-        f"Alpha : {alpha:.2%} | "
-        f"Beta : {beta:.2f} | "
-        f"Volatilité : {volatility_pf:.2%}"
-    )
-    st.info(commentaire)
+    with col_graph4:
+        st.subheader("Distribution des Rendements")
+        fig_hist = px.histogram(
+            returns_pf_norm * 100,
+            nbins=30,
+            title="Distribution Rendements Portefeuille",
+            labels={"value": "Rendement (%)", "count": "Fréquence"}
+        )
+        st.plotly_chart(fig_hist, use_container_width=True)
 
-    # ======================================================
-    # CONCLUSION
-    # ======================================================
+    # ==========================================================
+    # ANALYSE NARRATIVE
+    # ==========================================================
 
-    st.header("Conclusion Exécutive")
+    st.header("💬 Analyse Exécutive")
 
     if alpha > 0:
-        conclusion = """
-        Le portefeuille surperforme
-        son benchmark tout en
-        maintenant un niveau de
-        risque maîtrisé.
-        """
+        perf_text = f"**surperforme** de **{alpha:.2%}**"
+        sentiment = "✅ Positif"
     else:
-        conclusion = """
-        Le portefeuille sous-performe
-        le benchmark et nécessite
-        une analyse approfondie
-        d'attribution de performance.
-        """
+        perf_text = f"**sous-performe** de **{abs(alpha):.2%}**"
+        sentiment = "⚠️ À investiguer"
 
-    st.success(conclusion)
+    analysis = f"""
+    **Résumé de la performance:**
+    
+    - Le portefeuille {perf_text} son benchmark.
+    - **Beta: {beta:.2f}** (systématique du portefeuille)
+    - **Sharpe: {sharpe:.2f}** (rendement ajusté au risque)
+    - **Sortino: {sortino:.2f}** (rendement ajusté au risque baissier)
+    - **Volatilité:** {volatility_pf:.2%} vs {volatility_bm:.2%} (benchmark)
+    - **Drawdown Maximum:** {max_dd:.2%}
+    
+    **Verdict:** {sentiment}
+    """
 
-    # ======================================================
+    st.markdown(analysis)
+
+    # ==========================================================
     # EXPORTS
-    # ======================================================
+    # ==========================================================
 
-    st.header("Exports")
+    st.header("📥 Télécharger les Rapports")
+
+    col_exp1, col_exp2, col_exp3, col_exp4 = st.columns(4)
 
     excel_file = generate_excel(df, kpis)
     pdf_file = generate_pdf(kpis)
 
-    st.download_button("Télécharger Excel", excel_file, file_name="reporting_actions.xlsx")
-    st.download_button("Télécharger PDF", pdf_file, file_name="reporting_actions.pdf")
-    st.download_button("Télécharger CSV", df.to_csv(index=False), file_name="reporting_actions.csv")
-    st.download_button("Télécharger JSON", df.to_json(orient="records"), file_name="reporting_actions.json")
+    with col_exp1:
+        st.download_button(
+            "📊 Excel",
+            excel_file,
+            file_name="reporting_actions.xlsx"
+        )
 
-    # ======================================================
-    # DATA POWER BI
-    # ======================================================
+    with col_exp2:
+        st.download_button(
+            "📄 PDF",
+            pdf_file,
+            file_name="reporting_actions.pdf"
+        )
 
-    st.header("Connexion Power BI")
-    st.code(
-        """
-# api_powerbi.py
+    with col_exp3:
+        st.download_button(
+            "📋 CSV",
+            df.to_csv(index=False),
+            file_name="reporting_actions.csv"
+        )
 
-from fastapi import FastAPI
-import pandas as pd
+    with col_exp4:
+        st.download_button(
+            "📦 JSON",
+            df.to_json(orient="records"),
+            file_name="reporting_actions.json"
+        )
 
-app = FastAPI()
-
-@app.get('/portfolio')
-def portfolio():
-    df = pd.read_excel('data.xlsx')
-    return df.to_dict(orient='records')
-        """
-    )
-
-    st.info(
-        """
-    Power BI :
-
-    Get Data
-    -> Web
-
-    http://localhost:8000/portfolio
-    """
-    )
+    st.markdown("---")
+    st.caption("📌 Dashboard créé avec Streamlit | Données actualisées automatiquement")
