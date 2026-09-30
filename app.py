@@ -24,7 +24,7 @@ st.set_page_config(
 )
 
 st.title("📈 Dashboard Universel de Performance Financière")
-st.markdown("---")
+
 
 # ==========================================================
 # FONCTIONS KPI
