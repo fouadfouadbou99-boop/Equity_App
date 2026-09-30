@@ -506,7 +506,7 @@ if file:
         "Commentaires Automatiques"
     )
 
-    commentaire = f"""
+commentaire = f"""
 {nom_pf} affiche une performance cumulée de {perf_pf:.2%}
 contre {perf_bm:.2%} pour {nom_bm}.
 
