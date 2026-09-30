@@ -363,48 +363,60 @@ if file:
 
     perf_pf = (df[portfolio_nav].iloc[-1] / df[portfolio_nav].iloc[0]) - 1
     perf_bm = (df[benchmark_nav].iloc[-1] / df[benchmark_nav].iloc[0]) - 1
-    alpha = perf_pf - perf_bm
+        alpha = perf_pf - perf_bm
 
-    beta = calculate_beta(returns_pf, returns_bm)
-    volatility_pf = (
-    returns_pf.std(ddof=1)
-    * np.sqrt(ANNUAL_FACTOR)
-)
+    beta = calculer_beta(
+        retours_pf,
+        retours_bm
+    )
 
-volatility_bm = (
-    returns_bm.std(ddof=1)
-    * np.sqrt(ANNUAL_FACTOR)
-)
-    te = calculate_tracking_error(returns_pf, returns_bm)
-    ir = calculate_information_ratio(returns_pf, returns_bm)
-    sharpe = calculate_sharpe(returns_pf)
-    sortino = calculate_sortino(returns_pf)
-    corr = returns_pf.corr(returns_bm)
-    var95 = calculate_var(returns_pf)
-    cvar95 = calculate_cvar(returns_pf)
-    max_dd, dd_curve = calculate_max_drawdown(df[portfolio_nav])
-    hit_ratio = (returns_pf > returns_bm).mean()
+    volatilité_pf = (
+        retours_pf.std(ddof=1)
+        * np.sqrt(ANNUAL_FACTOR)
+    )
 
-    nom_pf = portfolio_nav.replace("Base 100", "").strip()
-    nom_bm = benchmark_nav.replace("Base 100", "").strip()
+    volatilité_bm = (
+        retours_bm.std(ddof=1)
+        * np.sqrt(ANNUAL_FACTOR)
+    )
 
-    kpis = {
-        f"Performance {nom_pf}": f"{perf_pf:.2%}",
-        f"Performance {nom_bm}": f"{perf_bm:.2%}",
-        f"Alpha {nom_pf}": f"{alpha:.2%}",
-        "Beta": f"{beta:.2f}",
-        f"Volatilité {nom_pf}": f"{volatility_pf:.2%}",
-        "Tracking Error": f"{te:.2%}",
-        "Information Ratio": f"{ir:.2f}",
-        f"Sharpe {nom_pf}": f"{sharpe:.2f}",
-        f"Sortino {nom_pf}": f"{sortino:.2f}",
-        "Corrélation": f"{corr:.2f}",
-        "VaR 95%": f"{var95:.2%}",
-        "CVaR 95%": f"{cvar95:.2%}",
-        "Max Drawdown": f"{max_dd:.2%}",
-        "Hit Ratio": f"{hit_ratio:.2%}"
-    }
+    te = calculate_tracking_error(
+        retours_pf,
+        retours_bm
+    )
 
+    ir = calculate_information_ratio(
+        retours_pf,
+        retours_bm
+    )
+
+    sharpe = calculate_sharpe(
+        retours_pf
+    )
+
+    sortino = calculate_sortino(
+        retours_pf
+    )
+
+    corr = retours_pf.corr(
+        retours_bm
+    )
+
+    var95 = calculate_var(
+        retours_pf
+    )
+
+    cvar95 = calculate_cvar(
+        retours_pf
+    )
+
+    max_dd, dd_curve = calculate_max_drawdown(
+        df[portfolio_nav]
+    )
+
+    hit_ratio = (
+        retours_pf > retours_bm
+    ).mean()
     # ======================================================
     # TABLEAU KPI
     # ======================================================
