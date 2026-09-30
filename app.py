@@ -507,25 +507,24 @@ if file:
     )
 
 commentaire = f"""
-    {nom_pf} affiche une performance cumulée de {perf_pf:.2%}
-    contre {perf_bm:.2%} pour {nom_bm}.
+{nom_pf} affiche une performance cumulée de {perf_pf:.2%}
+contre {perf_bm:.2%} pour {nom_bm}.
 
-    L'alpha observé est de {alpha:.2%}.
+L'alpha observé est de {alpha:.2%}.
 
-    Le bêta ressort à {beta:.2f}.
+Le bêta ressort à {beta:.2f}.
 
-    La volatilité annualisée de {nom_pf}
-    est de {volatility_pf:.2%}.
+La volatilité annualisée de {nom_pf}
+est de {volatility_pf:.2%}.
 
-    Le tracking error ressort à {te:.2%}.
+Le tracking error ressort à {te:.2%}.
 
-    Le ratio de Sharpe est de {sharpe:.2f}.
+Le ratio de Sharpe est de {sharpe:.2f}.
 
-    Le drawdown maximal observé est de {max_dd:.2%}.
+Le drawdown maximal observé est de {max_dd:.2%}.
 """
 
-    st.info(commentaire)
-
+st.info(commentaire)
     # ======================================================
     # CONCLUSION
     # ======================================================
