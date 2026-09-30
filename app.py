@@ -13,7 +13,32 @@ from reportlab.platypus import (
 )
 
 from reportlab.lib.styles import getSampleStyleSheet
+# ==========================================================
+# DETECTION AUTOMATIQUE DE LA FREQUENCE
+# ==========================================================
 
+def detect_frequency_factor(dates):
+
+    dates = pd.to_datetime(
+        dates,
+        errors="coerce"
+    ).dropna().sort_values()
+
+    if len(dates) < 2:
+        return 252, "Quotidien"
+
+    gap = dates.diff().dt.days.median()
+
+    if gap <= 3:
+        return 252, "Quotidien"
+    elif gap <= 10:
+        return 52, "Hebdomadaire"
+    elif gap <= 40:
+        return 12, "Mensuel"
+    elif gap <= 120:
+        return 4, "Trimestriel"
+    else:
+        return 1, "Annuel"
 # ==========================================================
 # CONFIGURATION
 # ==========================================================
