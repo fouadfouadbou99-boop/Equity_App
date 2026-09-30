@@ -366,8 +366,15 @@ if file:
     alpha = perf_pf - perf_bm
 
     beta = calculate_beta(returns_pf, returns_bm)
-    volatility_pf = returns_pf.std() * np.sqrt(52)
-    volatility_bm = returns_bm.std() * np.sqrt(52)
+    volatility_pf = (
+    returns_pf.std(ddof=1)
+    * np.sqrt(ANNUAL_FACTOR)
+)
+
+volatility_bm = (
+    returns_bm.std(ddof=1)
+    * np.sqrt(ANNUAL_FACTOR)
+)
     te = calculate_tracking_error(returns_pf, returns_bm)
     ir = calculate_information_ratio(returns_pf, returns_bm)
     sharpe = calculate_sharpe(returns_pf)
