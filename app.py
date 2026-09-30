@@ -498,31 +498,19 @@ if file:
         use_container_width=True
     )
 
-    # ======================================================
-    # COMMENTAIRES IA
-    # ======================================================
+# ======================================================
+# COMMENTAIRES IA
+# ======================================================
 
-    st.header(
-        "Commentaires Automatiques"
-    )
+st.header("Commentaires Automatiques")
 
-commentaire = f"""
-{nom_pf} affiche une performance cumulée de {perf_pf:.2%}
-contre {perf_bm:.2%} pour {nom_bm}.
-
-L'alpha observé est de {alpha:.2%}.
-
-Le bêta ressort à {beta:.2f}.
-
-La volatilité annualisée de {nom_pf}
-est de {volatility_pf:.2%}.
-
-Le tracking error ressort à {te:.2%}.
-
-Le ratio de Sharpe est de {sharpe:.2f}.
-
-Le drawdown maximal observé est de {max_dd:.2%}.
-"""
+commentaire = (
+    f"{nom_pf} : Performance {perf_pf:.2%} | "
+    f"{nom_bm} : Performance {perf_bm:.2%} | "
+    f"Alpha : {alpha:.2%} | "
+    f"Beta : {beta:.2f} | "
+    f"Volatilité : {volatility_pf:.2%}"
+)
 
 st.info(commentaire)
     # ======================================================
