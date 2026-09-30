@@ -206,24 +206,20 @@ if file:
     if df.empty:
         st.error("La colonne de dates est vide ou invalide.")
         st.stop()
-df = df.dropna(
-    subset=[date_col]
-).reset_index(drop=True)
+df = df.dropna(subset=[date_col]).reset_index(drop=True)
 
 ANNUAL_FACTOR, FREQUENCE = detect_frequency_factor(
     df[date_col]
 )
 
+if df.empty:
+    st.error("La colonne de dates est vide ou invalide.")
+    st.stop()
+
 st.success(
     f"Fréquence détectée : {FREQUENCE} | "
     f"Annualisation : {ANNUAL_FACTOR}"
 )
-
-if df.empty:
-    st.error(
-        "La colonne de dates est vide ou invalide."
-    )
-    st.stop()
     # ==========================================================
     # DETECTION AUTOMATIQUE DES COLONNES
     # ==========================================================
