@@ -368,6 +368,13 @@ if file:
         errors="coerce"
     ).dropna()
 
+    if len(returns_pf) < 2 or len(returns_bm) < 2:
+        st.error(
+            "Les colonnes de performance n'ont pas assez de données numériques. "
+            "Au moins 2 valeurs valides sont requises pour chaque performance."
+        )
+        st.stop()
+
     if returns_pf.empty or returns_bm.empty:
         st.error(
             "Les colonnes de performance sélectionnées sont vides ou non numériques."
