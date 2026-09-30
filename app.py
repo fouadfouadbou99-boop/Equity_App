@@ -524,23 +524,6 @@ commentaire = f"""
     Le drawdown maximal observé est de {max_dd:.2%}.
 """
 
-    L'alpha ressort à
-    {alpha:.2%}.
-
-    Le bêta est de
-    {beta:.2f}
-    ce qui indique un niveau
-    d'exposition proche du marché.
-
-    Le tracking error annualisé
-    est de
-    {te:.2%}.
-
-    Le maximum drawdown
-    observé est de
-    {max_dd:.2%}.
-    """
-
     st.info(commentaire)
 
     # ======================================================
