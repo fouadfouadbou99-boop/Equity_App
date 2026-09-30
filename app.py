@@ -358,9 +358,9 @@ if file:
     returns_bm = pd.to_numeric(df[benchmark_ret], errors="coerce").dropna()
 
         perf_pf = (
-        df[portfolio_nav].iloc[-1]
-        / df[portfolio_nav].iloc[0]
-    ) - 1
+    df[portfolio_nav].iloc[-1]
+    / df[portfolio_nav].iloc[0]
+) - 1
 
     perf_bm = (
         df[benchmark_nav].iloc[-1]
