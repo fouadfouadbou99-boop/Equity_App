@@ -201,71 +201,83 @@ if file:
     )
 
     # ==========================================================
-# DETECTION AUTOMATIQUE DES COLONNES
-# ==========================================================
+    # DETECTION AUTOMATIQUE DES COLONNES
+    # ==========================================================
 
-cols = list(df.columns)
+    cols = list(df.columns)
 
-base100_cols = [
-    c for c in cols
-    if "base" in c.lower()
-]
+    base100_cols = [
+        c for c in cols
+        if "base" in c.lower()
+    ]
 
-perf_cols = [
-    c for c in cols
-    if "perf" in c.lower()
-]
+    perf_cols = [
+        c for c in cols
+        if "perf" in c.lower()
+    ]
 
-if len(base100_cols) < 2:
-    st.error(
-        "Le fichier doit contenir au moins deux colonnes Base 100."
-    )
-    st.write(df.columns.tolist())
-    st.stop()
+    if len(base100_cols) < 2:
+        st.error(
+            "Le fichier doit contenir au moins deux colonnes Base 100."
+        )
+        st.write(df.columns.tolist())
+        st.stop()
 
-if len(perf_cols) < 2:
-    st.error(
-        "Le fichier doit contenir au moins deux colonnes de performance."
-    )
-    st.write(df.columns.tolist())
-    st.stop()
+    if len(perf_cols) < 2:
+        st.error(
+            "Le fichier doit contenir au moins deux colonnes de performance."
+        )
+        st.write(df.columns.tolist())
+        st.stop()
 
-st.subheader("Paramétrage de l'analyse")
+    st.subheader("Paramétrage de l'analyse")
 
-col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
-with col1:
-    portfolio_nav = st.selectbox(
-        "Valeur / Portefeuille",
-        base100_cols,
-        index=0
-    )
+    with col1:
+        portfolio_nav = st.selectbox(
+            "Valeur / Portefeuille",
+            base100_cols,
+            index=0
+        )
 
-with col2:
-    benchmark_nav = st.selectbox(
-        "Benchmark",
-        base100_cols,
-        index=min(1, len(base100_cols)-1)
-    )
+    with col2:
+        benchmark_nav = st.selectbox(
+            "Benchmark",
+            base100_cols,
+            index=min(1, len(base100_cols) - 1)
+        )
 
-col3, col4 = st.columns(2)
+    col3, col4 = st.columns(2)
 
-with col3:
-    portfolio_ret = st.selectbox(
-        "Performance Valeur / Portefeuille",
-        perf_cols,
-        index=0
-    )
+    with col3:
+        portfolio_ret = st.selectbox(
+            "Performance Valeur / Portefeuille",
+            perf_cols,
+            index=0
+        )
 
-with col4:
-    benchmark_ret = st.selectbox(
-        "Performance Benchmark",
-        perf_cols,
-        index=min(1, len(perf_cols)-1)
-    )
+    with col4:
+        benchmark_ret = st.selectbox(
+            "Performance Benchmark",
+            perf_cols,
+            index=min(1, len(perf_cols) - 1)
+        )
 
-returns_pf = df[portfolio_ret].dropna()
-returns_bm = df[benchmark_ret].dropna()
+    returns_pf = df[portfolio_ret].dropna()
+    returns_bm = df[benchmark_ret].dropna()
+
+    perf_pf = (
+        df[portfolio_nav].iloc[-1]
+        /
+        df[portfolio_nav].iloc[0]
+    ) - 1
+
+    perf_bm = (
+        df[benchmark_nav].iloc[-1]
+        /
+        df[benchmark_nav].iloc[0]
+    ) - 1
 
 
     perf_pf = (
