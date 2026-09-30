@@ -266,7 +266,7 @@ with col4:
 
 returns_pf = df[portfolio_ret].dropna()
 returns_bm = df[benchmark_ret].dropna()
-``
+
 
     perf_pf = (
         df[portfolio_nav].iloc[-1]
