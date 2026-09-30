@@ -363,7 +363,21 @@ if file:
         df[benchmark_ret],
         errors="coerce"
     ).dropna()
+returns_pf = pd.to_numeric(
+    df[portfolio_ret],
+    errors="coerce"
+).dropna()
 
+returns_bm = pd.to_numeric(
+    df[benchmark_ret],
+    errors="coerce"
+).dropna()
+
+if returns_pf.empty or returns_bm.empty:
+    st.error(
+        "Les colonnes de performance sélectionnées sont vides ou non numériques."
+    )
+    st.stop()
     if returns_pf.empty or returns_bm.empty:
         st.error(
             "Les colonnes de performance sélectionnées sont vides ou non numériques."
