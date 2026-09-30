@@ -220,6 +220,7 @@ st.success(
     f"Fréquence détectée : {FREQUENCE} | "
     f"Annualisation : {ANNUAL_FACTOR}"
 )
+
     # ==========================================================
     # DETECTION AUTOMATIQUE DES COLONNES
     # ==========================================================
