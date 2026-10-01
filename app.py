@@ -644,7 +644,7 @@ if (
 batting_average = np.mean(
     returns_pf > returns_bm
 )
-    )
+   
 
 else:
 
