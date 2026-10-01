@@ -393,9 +393,9 @@ batting_average = np.mean(returns_pf > 0) if len(returns_pf) > 0 else np.nan
 annual_return_pf = annualized_return(perf_pf_total, len(df) / annual_factor) if annual_factor > 0 else np.nan
 annual_return_bm = annualized_return(perf_bm_total, len(df) / annual_factor) if annual_factor > 0 else np.nan
 
-alpha = np.nan
-if np.isfinite(beta):
-    alpha = np.mean(returns_pf) - beta * np.mean(returns_bm)
+alpha = annual_return_pf - (
+    beta * annual_return_bm
+)
 
 # ==========================================================
 # DICTIONNAIRE KPI
