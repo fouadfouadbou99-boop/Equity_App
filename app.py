@@ -568,11 +568,71 @@ sharpe = calculate_sharpe(
 # SORTINO
 # ==========================================================
 
-sortino = calculate_sortino(
-    returns_pf,
+def calculate_sortino(
+    returns,
     annual_factor,
     rf=0
-)
+):
+
+    returns = np.asarray(
+        returns,
+        dtype=float
+    )
+
+    returns = returns[
+        np.isfinite(returns)
+    ]
+
+    if len(returns) < 2:
+        return np.nan
+
+    rf_period = (
+        (1 + rf)
+        ** (1 / annual_factor)
+        - 1
+    )
+
+    excess = (
+        returns
+        - rf_period
+    )
+
+    downside = np.minimum(
+        excess,
+        0
+    )
+
+    downside_deviation = np.sqrt(
+        np.mean(
+            downside ** 2
+        )
+    )
+
+    if downside_deviation == 0:
+        return np.nan
+
+    annual_return = (
+        np.prod(
+            1 + returns
+        )
+        ** (
+            annual_factor
+            / len(returns)
+        )
+        - 1
+    )
+
+    annual_downside = (
+        downside_deviation
+        * np.sqrt(
+            annual_factor
+        )
+    )
+
+    return (
+        annual_return
+        / annual_downside
+    )
 
 # ==========================================================
 # HIT RATIO
