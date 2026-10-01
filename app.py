@@ -335,6 +335,7 @@ with col4:
 # ==========================================================
 
 for column in [
+for column in [
     portfolio_nav,
     benchmark_nav,
     portfolio_ret,
@@ -344,7 +345,6 @@ for column in [
         df[column],
         errors="coerce"
     )
-``
 
 
 def safe_total_return(series):
