@@ -528,8 +528,7 @@ if np.isfinite(beta):
     alpha = (
         annual_return_pf
         - (
-            beta
-            * annual_return_bm
+            beta * annual_return_bm
         )
     )
 
