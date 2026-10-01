@@ -67,137 +67,324 @@ def finite_pair(port, bench):
 # ==========================================================
 
 def calculate_beta(port, bench):
+
     port, bench = finite_pair(port, bench)
+
     if len(port) < 2:
         return np.nan
 
-    var_bench = np.var(bench, ddof=1)
+    var_bench = np.var(
+        bench,
+        ddof=1
+    )
+
     if np.isclose(var_bench, 0):
         return np.nan
 
-    return np.cov(port, bench, ddof=1)[0, 1] / var_bench
+    covariance = np.cov(
+        port,
+        bench,
+        ddof=1
+    )[0, 1]
+
+    return covariance / var_bench
 
 
-def calculate_tracking_error(port, bench, annual_factor):
-    port, bench = finite_pair(port, bench)
+def calculate_tracking_error(
+    port,
+    bench,
+    annual_factor
+):
+
+    port, bench = finite_pair(
+        port,
+        bench
+    )
+
     if len(port) < 2:
         return np.nan
 
     active = port - bench
-    return np.std(active, ddof=1) * np.sqrt(annual_factor)
+
+    return (
+        np.std(
+            active,
+            ddof=1
+        )
+        * np.sqrt(annual_factor)
+    )
 
 
-def calculate_information_ratio(port, bench, annual_factor):
-    port, bench = finite_pair(port, bench)
-    if len(port) < 2:
+def calculate_information_ratio(
+    annual_return_pf,
+    annual_return_bm,
+    te
+):
+
+    if (
+        pd.isna(te)
+        or te <= 0
+    ):
         return np.nan
 
-    active = port - bench
-    te = np.std(active, ddof=1) * np.sqrt(annual_factor)
-    if np.isclose(te, 0):
-        return np.nan
-
-    active_annualized = np.mean(active) * annual_factor
-    return active_annualized / te
+    return (
+        annual_return_pf
+        - annual_return_bm
+    ) / te
 
 
-def period_rf_from_annual(annual_rf, annual_factor):
+def period_rf_from_annual(
+    annual_rf,
+    annual_factor
+):
+
     if annual_rf <= -1:
         return np.nan
-    return (1 + annual_rf) ** (1 / annual_factor) - 1
+
+    return (
+        (1 + annual_rf)
+        ** (1 / annual_factor)
+        - 1
+    )
 
 
-def calculate_sharpe(returns, annual_factor, rf=0):
-    returns = np.asarray(returns, dtype=float)
-    returns = returns[np.isfinite(returns)]
+def calculate_sharpe(
+    returns,
+    annual_factor,
+    rf=0
+):
+
+    returns = np.asarray(
+        returns,
+        dtype=float
+    )
+
+    returns = returns[
+        np.isfinite(returns)
+    ]
+
     if len(returns) < 2:
         return np.nan
 
-    rf_period = period_rf_from_annual(rf, annual_factor)
-    if not np.isfinite(rf_period):
+    annual_return = (
+        np.prod(1 + returns)
+        ** (
+            annual_factor
+            / len(returns)
+        )
+        - 1
+    )
+
+    annual_vol = (
+        np.std(
+            returns,
+            ddof=1
+        )
+        * np.sqrt(
+            annual_factor
+        )
+    )
+
+    if annual_vol == 0:
         return np.nan
 
-    excess = returns - rf_period
-    vol = np.std(excess, ddof=1)
-    if np.isclose(vol, 0):
-        return np.nan
-
-    return (np.mean(excess) * annual_factor) / (np.std(returns, ddof=1) * np.sqrt(annual_factor))
+    return (
+        annual_return
+        / annual_vol
+    )
 
 
-def calculate_sortino(returns, annual_factor, rf=0):
-    returns = np.asarray(returns, dtype=float)
-    returns = returns[np.isfinite(returns)]
+def calculate_sortino(
+    returns,
+    annual_factor,
+    rf=0
+):
+
+    returns = np.asarray(
+        returns,
+        dtype=float
+    )
+
+    returns = returns[
+        np.isfinite(returns)
+    ]
+
     if len(returns) < 2:
         return np.nan
 
-    rf_period = period_rf_from_annual(rf, annual_factor)
-    if not np.isfinite(rf_period):
+    annual_return = (
+        np.prod(1 + returns)
+        ** (
+            annual_factor
+            / len(returns)
+        )
+        - 1
+    )
+
+    downside = np.minimum(
+        returns,
+        0
+    )
+
+    downside_deviation = np.sqrt(
+        np.mean(
+            downside ** 2
+        )
+    )
+
+    annual_downside = (
+        downside_deviation
+        * np.sqrt(
+            annual_factor
+        )
+    )
+
+    if annual_downside == 0:
         return np.nan
 
-    excess = returns - rf_period
-    downside = excess[excess < 0]
-    if len(downside) == 0:
-        return np.nan
-
-    downside_vol = np.std(downside, ddof=1)
-    if np.isclose(downside_vol, 0):
-        return np.nan
-
-    annual_return = np.mean(excess) * annual_factor
-    annual_downside = downside_vol * np.sqrt(annual_factor)
-    return annual_return / annual_downside
+    return (
+        annual_return
+        / annual_downside
+    )
 
 
-def calculate_correlation(port, bench):
-    port, bench = finite_pair(port, bench)
+def calculate_correlation(
+    port,
+    bench
+):
+
+    port, bench = finite_pair(
+        port,
+        bench
+    )
+
     if len(port) < 2:
         return np.nan
-    return np.corrcoef(port, bench)[0, 1]
+
+    return np.corrcoef(
+        port,
+        bench
+    )[0, 1]
 
 
-def calculate_var(returns, confidence=0.95):
-    returns = np.asarray(returns, dtype=float)
-    returns = returns[np.isfinite(returns)]
+def calculate_var(
+    returns,
+    confidence=0.95
+):
+
+    returns = np.asarray(
+        returns,
+        dtype=float
+    )
+
+    returns = returns[
+        np.isfinite(returns)
+    ]
+
     if len(returns) == 0:
         return np.nan
-    return np.percentile(returns, (1 - confidence) * 100)
+
+    return np.quantile(
+        returns,
+        1 - confidence
+    )
 
 
-def calculate_cvar(returns, confidence=0.95):
-    returns = np.asarray(returns, dtype=float)
-    returns = returns[np.isfinite(returns)]
+def calculate_cvar(
+    returns,
+    confidence=0.95
+):
+
+    returns = np.asarray(
+        returns,
+        dtype=float
+    )
+
+    returns = returns[
+        np.isfinite(returns)
+    ]
+
     if len(returns) == 0:
         return np.nan
 
-    var_value = calculate_var(returns, confidence)
-    tail = returns[returns <= var_value]
-    if len(tail) == 0:
-        return np.nan
-    return np.mean(tail)
+    var95 = np.quantile(
+        returns,
+        1 - confidence
+    )
+
+    return np.mean(
+        returns[
+            returns <= var95
+        ]
+    )
 
 
-def calculate_max_drawdown(nav_series):
-    nav_series = pd.to_numeric(nav_series, errors="coerce").replace([np.inf, -np.inf], np.nan).dropna()
+def calculate_max_drawdown(
+    nav_series
+):
+
+    nav_series = (
+        pd.to_numeric(
+            nav_series,
+            errors="coerce"
+        )
+        .replace(
+            [np.inf, -np.inf],
+            np.nan
+        )
+        .dropna()
+    )
+
     if nav_series.empty:
-        return np.nan, pd.Series(dtype=float)
+        return (
+            np.nan,
+            pd.Series(dtype=float)
+        )
 
     running_max = nav_series.cummax()
-    drawdown = nav_series / running_max - 1
-    return drawdown.min(), drawdown
+
+    drawdown = (
+        nav_series
+        / running_max
+        - 1
+    )
+
+    return (
+        drawdown.min(),
+        drawdown
+    )
 
 
-def format_value(value, fmt):
+def format_value(
+    value,
+    fmt
+):
+
     if pd.isna(value):
         return "N/D"
-    return format(value, fmt)
+
+    return format(
+        value,
+        fmt
+    )
 
 
-def annualized_return(total_return, periods):
-    if pd.isna(total_return) or periods <= 0:
+def annualized_return(
+    total_return,
+    periods
+):
+
+    if (
+        pd.isna(total_return)
+        or periods <= 0
+    ):
         return np.nan
-    return (1 + total_return) ** (1 / periods) - 1
 
+    return (
+        (1 + total_return)
+        ** (1 / periods)
+        - 1
+    )
 
 # ==========================================================
 # EXPORT EXCEL / PDF
@@ -562,23 +749,17 @@ else:
 
     alpha = np.nan
 
+
 # ==========================================================
 # INFORMATION RATIO
 # ==========================================================
 
-if (
-    np.isfinite(te)
-    and te > 0
-):
+ir = calculate_information_ratio(
+    annual_return_pf,
+    annual_return_bm,
+    te
+)
 
-    ir = (
-        annual_return_pf
-        - annual_return_bm
-    ) / te
-
-else:
-
-    ir = np.nan
 
 # ==========================================================
 # SHARPE
@@ -590,75 +771,17 @@ sharpe = calculate_sharpe(
     rf=0
 )
 
+
 # ==========================================================
 # SORTINO
 # ==========================================================
 
-def calculate_sortino(
-    returns,
+sortino = calculate_sortino(
+    returns_pf,
     annual_factor,
     rf=0
-):
+)
 
-    returns = np.asarray(
-        returns,
-        dtype=float
-    )
-
-    returns = returns[
-        np.isfinite(returns)
-    ]
-
-    if len(returns) < 2:
-        return np.nan
-
-    rf_period = (
-        (1 + rf)
-        ** (1 / annual_factor)
-        - 1
-    )
-
-    excess = (
-        returns
-        - rf_period
-    )
-
-    downside = np.minimum(
-        excess,
-        0
-    )
-
-    downside_deviation = np.sqrt(
-        np.mean(
-            downside ** 2
-        )
-    )
-
-    if downside_deviation == 0:
-        return np.nan
-
-    annual_return = (
-        np.prod(
-            1 + returns
-        )
-        ** (
-            annual_factor
-            / len(returns)
-        )
-        - 1
-    )
-
-    annual_downside = (
-        downside_deviation
-        * np.sqrt(
-            annual_factor
-        )
-    )
-
-    return (
-        annual_return
-        / annual_downside
-    )
 
 # ==========================================================
 # HIT RATIO
@@ -667,6 +790,7 @@ def calculate_sortino(
 hit_ratio = np.mean(
     returns_pf > returns_bm
 )
+
 
 # ==========================================================
 # UP CAPTURE
@@ -694,6 +818,7 @@ if (
             returns_bm[up_mask]
         )
     )
+
 
 # ==========================================================
 # DOWN CAPTURE
@@ -724,80 +849,6 @@ if (
 
 
 # ==========================================================
-# INFORMATION RATIO
-# ==========================================================
-
-if (
-    np.isfinite(te)
-    and te > 0
-):
-
-    ir = (
-        annual_return_pf
-        - annual_return_bm
-    ) / te
-
-else:
-
-    ir = np.nan
-
-# ==========================================================
-# SHARPE / SORTINO
-# ==========================================================
-
-sharpe = calculate_sharpe(
-    returns_pf,
-    annual_factor,
-    rf=0
-)
-
-sortino = calculate_sortino(
-    returns_pf,
-    annual_factor,
-    rf=0
-)
-
-# ==========================================================
-# HIT RATIO
-# ==========================================================
-
-hit_ratio = np.mean(
-    returns_pf > returns_bm
-)
-
-# ==========================================================
-# UP / DOWN CAPTURE
-# ==========================================================
-
-up_capture = np.nan
-down_capture = np.nan
-
-up_mask = returns_bm > 0
-down_mask = returns_bm < 0
-
-if (
-    np.any(up_mask)
-    and np.mean(returns_bm[up_mask]) != 0
-):
-
-    up_capture = (
-        np.mean(returns_pf[up_mask])
-        /
-        np.mean(returns_bm[up_mask])
-    )
-
-if (
-    np.any(down_mask)
-    and np.mean(returns_bm[down_mask]) != 0
-):
-
-    down_capture = (
-        np.mean(returns_pf[down_mask])
-        /
-        np.mean(returns_bm[down_mask])
-    )
-
-# ==========================================================
 # BATTING AVERAGE
 # ==========================================================
 
@@ -809,28 +860,132 @@ batting_average = np.mean(
 # ==========================================================
 
 kpis = {
-    "📅 Fréquence": frequency,
-    "📊 Annualisation": annual_factor,
-    f"📈 Perf Totale {portfolio_nav}": format_value(perf_pf_total, ".2%"),
-    f"📈 Perf Totale {benchmark_nav}": format_value(perf_bm_total, ".2%"),
-    "📈 Perf Annualisée PF": format_value(annual_return_pf, ".2%"),
-    "📈 Perf Annualisée BM": format_value(annual_return_bm, ".2%"),
-    "🎯 Alpha": format_value(alpha, ".2%"),
-    "📉 Beta": format_value(beta, ".2f"),
-    f"📊 Vol {portfolio_nav}": format_value(volatility_pf, ".2%"),
-    f"📊 Vol {benchmark_nav}": format_value(volatility_bm, ".2%"),
-    "🔍 Tracking Error": format_value(te, ".2%"),
-    "💡 Information Ratio": format_value(ir, ".2f"),
-    "📉 Sharpe": format_value(sharpe, ".2f"),
-    "📉 Sortino": format_value(sortino, ".2f"),
-    "🔗 Corrélation": format_value(corr, ".2f"),
-    "⚠️ VaR 95%": format_value(var95, ".2%"),
-    "⚠️ CVaR 95%": format_value(cvar95, ".2%"),
-    "📉 Max Drawdown": format_value(max_dd, ".2%"),
-    "🎯 Hit Ratio": format_value(hit_ratio, ".2%"),
-    "📈 Up Capture": format_value(up_capture, ".2f"),
-    "📉 Down Capture": format_value(down_capture, ".2f"),
-    "🎯 Batting Average": format_value(batting_average, ".2%"),
+
+    "📅 Fréquence":
+        str(frequency),
+
+    "📊 Annualisation":
+        str(annual_factor),
+
+    f"📈 Perf Totale {portfolio_nav}":
+        format_value(
+            perf_pf_total,
+            ".2%"
+        ),
+
+    f"📈 Perf Totale {benchmark_nav}":
+        format_value(
+            perf_bm_total,
+            ".2%"
+        ),
+
+    "📈 Perf Annualisée PF":
+        format_value(
+            annual_return_pf,
+            ".2%"
+        ),
+
+    "📈 Perf Annualisée BM":
+        format_value(
+            annual_return_bm,
+            ".2%"
+        ),
+
+    "🎯 Alpha":
+        format_value(
+            alpha,
+            ".2%"
+        ),
+
+    "📉 Beta":
+        format_value(
+            beta,
+            ".2f"
+        ),
+
+    f"📊 Vol {portfolio_nav}":
+        format_value(
+            volatility_pf,
+            ".2%"
+        ),
+
+    f"📊 Vol {benchmark_nav}":
+        format_value(
+            volatility_bm,
+            ".2%"
+        ),
+
+    "🔍 Tracking Error":
+        format_value(
+            te,
+            ".2%"
+        ),
+
+    "💡 Information Ratio":
+        format_value(
+            ir,
+            ".2f"
+        ),
+
+    "📉 Sharpe":
+        format_value(
+            sharpe,
+            ".2f"
+        ),
+
+    "📉 Sortino":
+        format_value(
+            sortino,
+            ".2f"
+        ),
+
+    "🔗 Corrélation":
+        format_value(
+            corr,
+            ".2f"
+        ),
+
+    "⚠️ VaR 95%":
+        format_value(
+            var95,
+            ".2%"
+        ),
+
+    "⚠️ CVaR 95%":
+        format_value(
+            cvar95,
+            ".2%"
+        ),
+
+    "📉 Max Drawdown":
+        format_value(
+            max_dd,
+            ".2%"
+        ),
+
+    "🎯 Hit Ratio":
+        format_value(
+            hit_ratio,
+            ".2%"
+        ),
+
+    "📈 Up Capture":
+        format_value(
+            up_capture,
+            ".2f"
+        ),
+
+    "📉 Down Capture":
+        format_value(
+            down_capture,
+            ".2f"
+        ),
+
+    "🎯 Batting Average":
+        format_value(
+            batting_average,
+            ".2%"
+        ),
 }
 
 # ==========================================================
