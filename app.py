@@ -331,7 +331,19 @@ if len(perf_df) < 2:
 returns_pf = perf_df["pf"].to_numpy(dtype=float)
 returns_bm = perf_df["bm"].to_numpy(dtype=float)
 active_returns = returns_pf - returns_bm
+st.warning("DEBUG")
 
+st.write("portfolio_nav =", portfolio_nav)
+st.write("benchmark_nav =", benchmark_nav)
+
+st.write("portfolio_ret =", portfolio_ret)
+st.write("benchmark_ret =", benchmark_ret)
+
+st.write("Premières lignes NAV PF")
+st.write(df[[portfolio_nav]].head())
+
+st.write("Premières lignes NAV BM")
+st.write(df[[benchmark_nav]].head())
 # ==========================================================
 # KPI
 # ==========================================================
