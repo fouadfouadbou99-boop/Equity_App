@@ -349,10 +349,7 @@ for column in [
 def safe_total_return(series):
 
     series = (
-        pd.to_numeric(
-            series,
-            errors="coerce"
-        )
+        pd.to_numeric(series, errors="coerce")
         .replace([np.inf, -np.inf], np.nan)
         .dropna()
     )
@@ -365,7 +362,6 @@ def safe_total_return(series):
         / series.iloc[0]
         - 1
     )
-
 
 nav_pf = (
     df[portfolio_nav]
