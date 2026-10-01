@@ -273,39 +273,62 @@ annual_factor, frequency = detect_frequency_factor(df[date_col])
 st.success(f"✅ Fréquence: **{frequency}** | Annualisation: **{annual_factor}**")
 
 # ==========================================================
-# SELECTION DES COLONNES
+# SELECTION INTELLIGENTE DES COLONNES
 # ==========================================================
 
-available_cols = [column for column in df.columns if column != date_col]
-if len(available_cols) < 4:
-    st.error("❌ Besoin de 4 colonnes minimum (Date + 2 Base 100 + 2 Performance).")
+base100_cols = [
+    c for c in df.columns
+    if "Base 100" in str(c)
+]
+
+perf_cols = [
+    c for c in df.columns
+    if "Perf" in str(c)
+]
+
+if len(base100_cols) < 2:
+    st.error(
+        "❌ Deux colonnes Base 100 sont requises."
+    )
+    st.stop()
+
+if len(perf_cols) < 2:
+    st.error(
+        "❌ Deux colonnes Performance sont requises."
+    )
     st.stop()
 
 st.subheader("⚙️ Paramétrage")
+
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    portfolio_nav = st.selectbox("📊 Portefeuille Base 100", available_cols, index=0)
+    portfolio_nav = st.selectbox(
+        "📊 Portefeuille Base 100",
+        base100_cols,
+        index=0
+    )
 
 with col2:
-    benchmark_candidates = [c for c in available_cols if c != portfolio_nav]
-    benchmark_nav = st.selectbox("📈 Benchmark Base 100", benchmark_candidates, index=0)
-
-remaining_perf = [c for c in available_cols if c not in [portfolio_nav, benchmark_nav]]
-if len(remaining_perf) < 2:
-    st.error("❌ Besoin de 2 colonnes de performance.")
-    st.stop()
+    benchmark_nav = st.selectbox(
+        "📈 Benchmark Base 100",
+        [c for c in base100_cols if c != portfolio_nav],
+        index=0
+    )
 
 with col3:
-    portfolio_ret = st.selectbox("📉 Performance Portefeuille", remaining_perf, index=0)
+    portfolio_ret = st.selectbox(
+        "📉 Performance Portefeuille",
+        perf_cols,
+        index=0
+    )
 
 with col4:
-    benchmark_ret_candidates = [c for c in remaining_perf if c != portfolio_ret]
-    benchmark_ret = st.selectbox("📈 Performance Benchmark", benchmark_ret_candidates, index=0)
-
-if portfolio_nav == benchmark_nav or portfolio_ret == benchmark_ret:
-    st.warning("⚠️ Colonnes identiques sélectionnées.")
-    st.stop()
+    benchmark_ret = st.selectbox(
+        "📈 Performance Benchmark",
+        [c for c in perf_cols if c != portfolio_ret],
+        index=0
+    )
 
 # ==========================================================
 # DONNEES ET NORMALISATION
