@@ -510,10 +510,33 @@ var95 = calculate_var(
     confidence=0.95
 )
 
-cvar95 = calculate_cvar(
-    returns_pf,
+def calculate_cvar(
+    returns,
     confidence=0.95
-)
+):
+
+    returns = np.asarray(
+        returns,
+        dtype=float
+    )
+
+    returns = returns[
+        np.isfinite(returns)
+    ]
+
+    if len(returns) == 0:
+        return np.nan
+
+    var95 = np.quantile(
+        returns,
+        1 - confidence
+    )
+
+    return np.mean(
+        returns[
+            returns <= var95
+        ]
+    )
 
 max_dd, dd_curve = calculate_max_drawdown(
     df[portfolio_nav]
