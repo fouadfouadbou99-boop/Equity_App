@@ -589,6 +589,179 @@ if (
 batting_average = np.mean(
     returns_pf > returns_bm
 )
+
+# ==========================================================
+# PERFORMANCE ANNUALISEE
+# ==========================================================
+
+years = len(df) / annual_factor
+
+if years > 0:
+
+    annual_return_pf = (
+        (1 + perf_pf_total)
+        ** (1 / years)
+    ) - 1
+
+    annual_return_bm = (
+        (1 + perf_bm_total)
+        ** (1 / years)
+    ) - 1
+
+else:
+
+    annual_return_pf = np.nan
+    annual_return_bm = np.nan
+
+# ==========================================================
+# RISQUES
+# ==========================================================
+
+beta = calculate_beta(
+    returns_pf,
+    returns_bm
+)
+
+volatility_pf = (
+    np.std(
+        returns_pf,
+        ddof=1
+    )
+    * np.sqrt(annual_factor)
+)
+
+volatility_bm = (
+    np.std(
+        returns_bm,
+        ddof=1
+    )
+    * np.sqrt(annual_factor)
+)
+
+te = calculate_tracking_error(
+    returns_pf,
+    returns_bm,
+    annual_factor
+)
+
+corr = calculate_correlation(
+    returns_pf,
+    returns_bm
+)
+
+var95 = calculate_var(
+    returns_pf,
+    confidence=0.95
+)
+
+cvar95 = calculate_cvar(
+    returns_pf,
+    confidence=0.95
+)
+
+max_dd, dd_curve = calculate_max_drawdown(
+    df[portfolio_nav]
+)
+
+# ==========================================================
+# ALPHA
+# ==========================================================
+
+if np.isfinite(beta):
+
+    alpha = (
+        annual_return_pf
+        - (
+            beta
+            * annual_return_bm
+        )
+    )
+
+else:
+
+    alpha = np.nan
+
+# ==========================================================
+# INFORMATION RATIO
+# ==========================================================
+
+if (
+    np.isfinite(te)
+    and te > 0
+):
+
+    ir = (
+        annual_return_pf
+        - annual_return_bm
+    ) / te
+
+else:
+
+    ir = np.nan
+
+# ==========================================================
+# SHARPE / SORTINO
+# ==========================================================
+
+sharpe = calculate_sharpe(
+    returns_pf,
+    annual_factor,
+    rf=0
+)
+
+sortino = calculate_sortino(
+    returns_pf,
+    annual_factor,
+    rf=0
+)
+
+# ==========================================================
+# HIT RATIO
+# ==========================================================
+
+hit_ratio = np.mean(
+    returns_pf > returns_bm
+)
+
+# ==========================================================
+# UP / DOWN CAPTURE
+# ==========================================================
+
+up_capture = np.nan
+down_capture = np.nan
+
+up_mask = returns_bm > 0
+down_mask = returns_bm < 0
+
+if (
+    np.any(up_mask)
+    and np.mean(returns_bm[up_mask]) != 0
+):
+
+    up_capture = (
+        np.mean(returns_pf[up_mask])
+        /
+        np.mean(returns_bm[up_mask])
+    )
+
+if (
+    np.any(down_mask)
+    and np.mean(returns_bm[down_mask]) != 0
+):
+
+    down_capture = (
+        np.mean(returns_pf[down_mask])
+        /
+        np.mean(returns_bm[down_mask])
+    )
+
+# ==========================================================
+# BATTING AVERAGE
+# ==========================================================
+
+batting_average = np.mean(
+    returns_pf > returns_bm
+)
 # ==========================================================
 # DICTIONNAIRE KPI
 # ==========================================================
