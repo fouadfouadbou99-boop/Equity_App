@@ -537,7 +537,10 @@ def calculate_cvar(
             returns <= var95
         ]
     )
-
+cvar95 = calculate_cvar(
+    returns_pf,
+    confidence=0.95
+)
 max_dd, dd_curve = calculate_max_drawdown(
     df[portfolio_nav]
 )
