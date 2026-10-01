@@ -368,16 +368,7 @@ volatility_pf = np.std(returns_pf, ddof=1) * np.sqrt(annual_factor)
 volatility_bm = np.std(returns_bm, ddof=1) * np.sqrt(annual_factor)
 te = calculate_tracking_error(returns_pf, returns_bm, annual_factor)
 if te > 0:
-
-    ir = (
-        annual_return_pf
-        -
-        annual_return_bm
-    ) / te
-
-else:
-
-    ir = np.nan
+ir = (annual_return_pf-annual_return_bm) / te else:ir = np.nan
 sharpe = calculate_sharpe(returns_pf, annual_factor, rf=0)
 sortino = calculate_sortino(returns_pf, annual_factor, rf=0)
 corr = calculate_correlation(returns_pf, returns_bm)
