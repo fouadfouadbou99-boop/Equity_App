@@ -336,40 +336,310 @@ active_returns = returns_pf - returns_bm
 # KPI
 # ==========================================================
 
-alpha = perf_pf_total - perf_bm_total
-beta = calculate_beta(returns_pf, returns_bm)
-volatility_pf = np.std(returns_pf, ddof=1) * np.sqrt(annual_factor)
-volatility_bm = np.std(returns_bm, ddof=1) * np.sqrt(annual_factor)
-te = calculate_tracking_error(returns_pf, returns_bm, annual_factor)
-ir = calculate_information_ratio(returns_pf, returns_bm, annual_factor)
-sharpe = calculate_sharpe(returns_pf, annual_factor)
-sortino = calculate_sortino(returns_pf, annual_factor)
-corr = calculate_correlation(returns_pf, returns_bm)
-var95 = calculate_var(returns_pf)
-cvar95 = calculate_cvar(returns_pf)
-max_dd, dd_curve = calculate_max_drawdown(df[portfolio_nav])
-hit_ratio = (active_returns > 0).mean()
+# ==========================================================
+# KPI
+# ==========================================================
+
+# Performance cumulée
+perf_pf_total = safe_total_return(nav_pf)
+perf_bm_total = safe_total_return(nav_bm)
+
+# Performance annualisée géométrique
+annual_return_pf = (
+    np.prod(1 + returns_pf)
+    ** (annual_factor / len(returns_pf))
+) - 1
+
+annual_return_bm = (
+    np.prod(1 + returns_bm)
+    ** (annual_factor / len(returns_bm))
+) - 1
+
+# Alpha
+alpha = annual_return_pf - annual_return_bm
+
+# Beta
+beta = calculate_beta(
+    returns_pf,
+    returns_bm
+)
+
+# Volatilité annualisée
+volatility_pf = (
+    np.std(
+        returns_pf,
+        ddof=1
+    )
+    * np.sqrt(annual_factor)
+)
+
+volatility_bm = (
+    np.std(
+        returns_bm,
+        ddof=1
+    )
+    * np.sqrt(annual_factor)
+)
+
+# Tracking Error
+te = calculate_tracking_error(
+    returns_pf,
+    returns_bm,
+    annual_factor
+)
+
+# Information Ratio
+if (
+    np.isfinite(te)
+    and te > 0
+):
+    ir = (
+        annual_return_pf
+        - annual_return_bm
+    ) / te
+else:
+    ir = np.nan
+
+# Sharpe Ratio
+if (
+    np.isfinite(volatility_pf)
+    and volatility_pf > 0
+):
+    sharpe = (
+        annual_return_pf
+        / volatility_pf
+    )
+else:
+    sharpe = np.nan
+
+# Sortino Ratio
+downside_returns = returns_pf[
+    returns_pf < 0
+]
+
+if len(downside_returns) > 1:
+
+    downside_vol = (
+        np.std(
+            downside_returns,
+            ddof=1
+        )
+        * np.sqrt(annual_factor)
+    )
+
+    if downside_vol > 0:
+        sortino = (
+            annual_return_pf
+            / downside_vol
+        )
+    else:
+        sortino = np.nan
+
+else:
+    sortino = np.nan
+
+# Corrélation
+corr = calculate_correlation(
+    returns_pf,
+    returns_bm
+)
+
+# VaR Historique
+var95 = np.quantile(
+    returns_pf,
+    0.05
+)
+
+# CVaR Historique
+cvar95 = np.mean(
+    returns_pf[
+        returns_pf <= var95
+    ]
+)
+
+# Drawdown
+max_dd, dd_curve = calculate_max_drawdown(
+    df[portfolio_nav]
+)
+
+# Active Return
+active_returns = (
+    returns_pf
+    - returns_bm
+)
+
+# Hit Ratio
+hit_ratio = (
+    active_returns > 0
+).mean()
+
+# Up Capture
+up_mask = (
+    returns_bm > 0
+)
+
+if up_mask.sum() > 0:
+
+    up_capture = (
+        returns_pf[up_mask].mean()
+        / returns_bm[up_mask].mean()
+    )
+
+else:
+    up_capture = np.nan
+
+# Down Capture
+down_mask = (
+    returns_bm < 0
+)
+
+if down_mask.sum() > 0:
+
+    down_capture = (
+        returns_pf[down_mask].mean()
+        / returns_bm[down_mask].mean()
+    )
+
+else:
+    down_capture = np.nan
+
+# Batting Average
+batting_average = (
+    active_returns > 0
+).sum() / len(active_returns)
+
+# ==========================================================
+# DICTIONNAIRE KPI
+# ==========================================================
 
 kpis = {
-    "📅 Fréquence": frequency,
-    "📊 Annualisation": annual_factor,
-    f"📈 Perf {portfolio_nav}": format_value(perf_pf_total, ".2%"),
-    f"📈 Perf {benchmark_nav}": format_value(perf_bm_total, ".2%"),
-    "🎯 Alpha (total)": format_value(alpha, ".2%"),
-    "📉 Beta": format_value(beta, ".2f"),
-    f"📊 Vol {portfolio_nav}": format_value(volatility_pf, ".2%"),
-    f"📊 Vol {benchmark_nav}": format_value(volatility_bm, ".2%"),
-    "🔍 Tracking Error": format_value(te, ".2%"),
-    "💡 Information Ratio": format_value(ir, ".2f"),
-    "📉 Sharpe": format_value(sharpe, ".2f"),
-    "📉 Sortino": format_value(sortino, ".2f"),
-    "🔗 Corrélation": format_value(corr, ".2f"),
-    "⚠️ VaR 95%": format_value(var95, ".2%"),
-    "⚠️ CVaR 95%": format_value(cvar95, ".2%"),
-    "📉 Max Drawdown": format_value(max_dd, ".2%"),
-    "🎯 Hit Ratio": format_value(hit_ratio, ".2%"),
-}
 
+    "📅 Fréquence":
+        frequency,
+
+    "📊 Annualisation":
+        annual_factor,
+
+    f"📈 Perf Totale {portfolio_nav}":
+        format_value(
+            perf_pf_total,
+            ".2%"
+        ),
+
+    f"📈 Perf Totale {benchmark_nav}":
+        format_value(
+            perf_bm_total,
+            ".2%"
+        ),
+
+    "📈 Perf Annualisée PF":
+        format_value(
+            annual_return_pf,
+            ".2%"
+        ),
+
+    "📈 Perf Annualisée BM":
+        format_value(
+            annual_return_bm,
+            ".2%"
+        ),
+
+    "🎯 Alpha":
+        format_value(
+            alpha,
+            ".2%"
+        ),
+
+    "📉 Beta":
+        format_value(
+            beta,
+            ".2f"
+        ),
+
+    f"📊 Vol {portfolio_nav}":
+        format_value(
+            volatility_pf,
+            ".2%"
+        ),
+
+    f"📊 Vol {benchmark_nav}":
+        format_value(
+            volatility_bm,
+            ".2%"
+        ),
+
+    "🔍 Tracking Error":
+        format_value(
+            te,
+            ".2%"
+        ),
+
+    "💡 Information Ratio":
+        format_value(
+            ir,
+            ".2f"
+        ),
+
+    "📉 Sharpe":
+        format_value(
+            sharpe,
+            ".2f"
+        ),
+
+    "📉 Sortino":
+        format_value(
+            sortino,
+            ".2f"
+        ),
+
+    "🔗 Corrélation":
+        format_value(
+            corr,
+            ".2f"
+        ),
+
+    "⚠️ VaR 95%":
+        format_value(
+            var95,
+            ".2%"
+        ),
+
+    "⚠️ CVaR 95%":
+        format_value(
+            cvar95,
+            ".2%"
+        ),
+
+    "📉 Max Drawdown":
+        format_value(
+            max_dd,
+            ".2%"
+        ),
+
+    "🎯 Hit Ratio":
+        format_value(
+            hit_ratio,
+            ".2%"
+        ),
+
+    "📈 Up Capture":
+        format_value(
+            up_capture,
+            ".2f"
+        ),
+
+    "📉 Down Capture":
+        format_value(
+            down_capture,
+            ".2f"
+        ),
+
+    "🎯 Batting Average":
+        format_value(
+            batting_average,
+            ".2%"
+        ),
+}
 # ==========================================================
 # AFFICHAGE
 # ==========================================================
