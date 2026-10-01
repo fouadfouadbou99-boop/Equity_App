@@ -335,7 +335,6 @@ with col4:
 # ==========================================================
 
 for column in [
-for column in [
     portfolio_nav,
     benchmark_nav,
     portfolio_ret,
