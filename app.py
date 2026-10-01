@@ -344,6 +344,7 @@ for column in [
         df[column],
         errors="coerce"
     )
+``
 
 
 def safe_total_return(series):
