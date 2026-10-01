@@ -368,6 +368,17 @@ def safe_total_return(series):
         / series.iloc[0]
         - 1
     )
+nav_pf = (
+    df[portfolio_nav]
+    .replace([np.inf, -np.inf], np.nan)
+    .dropna()
+)
+
+nav_bm = (
+    df[benchmark_nav]
+    .replace([np.inf, -np.inf], np.nan)
+    .dropna()
+)
 nav_bm = (
     df[benchmark_nav]
     .replace([np.inf, -np.inf], np.nan)
