@@ -344,257 +344,37 @@ st.write(df[[portfolio_nav]].head())
 
 st.write("Premières lignes NAV BM")
 st.write(df[[benchmark_nav]].head())
-# ==========================================================
-# KPI
-# ==========================================================
+def calculate_beta(port, bench):
 
-# Nettoyage final des rendements
-returns_pf = returns_pf[np.isfinite(returns_pf)]
-returns_bm = returns_bm[np.isfinite(returns_bm)]
+    pair = pd.DataFrame({
+        "port": port,
+        "bench": bench
+    })
 
-returns_pf = returns_pf[returns_pf > -0.9999]
-returns_bm = returns_bm[returns_bm > -0.9999]
+    pair = (
+        pair
+        .replace([np.inf, -np.inf], np.nan)
+        .dropna()
+    )
 
-# ==========================================================
-# PERFORMANCE TOTALE
-# ==========================================================
+    if len(pair) < 2:
+        return np.nan
 
-perf_pf_total = (
-    nav_pf.iloc[-1] / nav_pf.iloc[0]
-) - 1
+    covariance = np.cov(
+        pair["port"],
+        pair["bench"],
+        ddof=1
+    )[0, 1]
 
-perf_bm_total = (
-    nav_bm.iloc[-1] / nav_bm.iloc[0]
-) - 1
-
-# ==========================================================
-# PERFORMANCE ANNUALISEE
-# ==========================================================
-
-nb_obs_pf = len(nav_pf)
-nb_obs_bm = len(nav_bm)
-
-annual_return_pf = (
-    nav_pf.iloc[-1] / nav_pf.iloc[0]
-) ** (
-    annual_factor / nb_obs_pf
-) - 1
-
-annual_return_bm = (
-    nav_bm.iloc[-1] / nav_bm.iloc[0]
-) ** (
-    annual_factor / nb_obs_bm
-) - 1
-
-# ==========================================================
-# ALPHA
-# ==========================================================
-
-alpha = annual_return_pf - annual_return_bm
-
-# ==========================================================
-# BETA
-# ==========================================================
-
-beta = calculate_beta(
-    returns_pf,
-    returns_bm
-)
-
-# ==========================================================
-# VOLATILITE
-# ==========================================================
-
-volatility_pf = (
-    np.std(
-        returns_pf,
+    variance = np.var(
+        pair["bench"],
         ddof=1
     )
-    * np.sqrt(annual_factor)
-)
 
-volatility_bm = (
-    np.std(
-        returns_bm,
-        ddof=1
-    )
-    * np.sqrt(annual_factor)
-)
+    if np.isclose(variance, 0):
+        return np.nan
 
-# ==========================================================
-# TRACKING ERROR
-# ==========================================================
-
-active_returns = (
-    returns_pf
-    - returns_bm
-)
-
-te = (
-    np.std(
-        active_returns,
-        ddof=1
-    )
-    * np.sqrt(annual_factor)
-)
-
-# ==========================================================
-# INFORMATION RATIO
-# ==========================================================
-
-if te > 0:
-    ir = (
-        annual_return_pf
-        - annual_return_bm
-    ) / te
-else:
-    ir = np.nan
-
-# ==========================================================
-# SHARPE
-# ==========================================================
-
-if volatility_pf > 0:
-    sharpe = (
-        annual_return_pf
-        / volatility_pf
-    )
-else:
-    sharpe = np.nan
-
-# ==========================================================
-# SORTINO
-# ==========================================================
-
-downside_returns = (
-    returns_pf[
-        returns_pf < 0
-    ]
-)
-
-if len(downside_returns) > 1:
-
-    downside_vol = (
-        np.std(
-            downside_returns,
-            ddof=1
-        )
-        * np.sqrt(annual_factor)
-    )
-
-    if downside_vol > 0:
-        sortino = (
-            annual_return_pf
-            / downside_vol
-        )
-    else:
-        sortino = np.nan
-
-else:
-    sortino = np.nan
-
-# ==========================================================
-# CORRELATION
-# ==========================================================
-
-corr = calculate_correlation(
-    returns_pf,
-    returns_bm
-)
-
-# ==========================================================
-# VAR & CVAR
-# ==========================================================
-
-var95 = np.quantile(
-    returns_pf,
-    0.05
-)
-
-cvar95 = np.mean(
-    returns_pf[
-        returns_pf <= var95
-    ]
-)
-
-# ==========================================================
-# DRAWDOWN
-# ==========================================================
-
-max_dd, dd_curve = calculate_max_drawdown(
-    df[portfolio_nav]
-)
-
-# ==========================================================
-# HIT RATIO
-# ==========================================================
-
-hit_ratio = (
-    active_returns > 0
-).mean()
-
-# ==========================================================
-# UP CAPTURE
-# ==========================================================
-
-up_mask = (
-    returns_bm > 0
-)
-
-if up_mask.sum() > 0:
-
-    up_capture = (
-        np.mean(
-            returns_pf[up_mask]
-        )
-        /
-        np.mean(
-            returns_bm[up_mask]
-        )
-    )
-
-else:
-
-    up_capture = np.nan
-
-# ==========================================================
-# DOWN CAPTURE
-# ==========================================================
-
-down_mask = (
-    returns_bm < 0
-)
-
-if down_mask.sum() > 0:
-
-    down_capture = (
-        np.mean(
-            returns_pf[down_mask]
-        )
-        /
-        np.mean(
-            returns_bm[down_mask]
-        )
-    )
-
-else:
-
-    down_capture = np.nan
-
-# ==========================================================
-# BATTING AVERAGE
-# ==========================================================
-
-batting_average = (
-    active_returns > 0
-).sum() / len(active_returns)
-
-# ==========================================================
-# KPI DICTIONARY
-# ==========================================================
-
-kpis = {
-
+    return covariance / variance
     "📅 Fréquence":
         frequency,
 
