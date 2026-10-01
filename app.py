@@ -339,7 +339,7 @@ for column in [
     benchmark_nav,
     portfolio_ret,
     benchmark_ret
-\\]:
+\]:
     df[column] = pd.to_numeric(
         df[column],
         errors="coerce"
