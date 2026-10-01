@@ -33,7 +33,7 @@ def detect_frequency_factor(dates):
 
 
 # ==========================================================
-# NORMALISATION ET NETTOYAGE DES RENDEMENTS
+# NORMALISATION DES RENDEMENTS
 # ==========================================================
 
 def normalize_returns(series):
@@ -44,22 +44,26 @@ def normalize_returns(series):
     if valid.empty:
         return series
 
-    # 5 signifie 5 %, alors que 0.05 signifie déjà 5 %.
-    if valid.abs().max() > 1:
-        return series / 100
+    max_abs = valid.abs().max()
+    if pd.isna(max_abs):
+        return series
+
+    # Si les valeurs sont exprimées en %, ex: 5 ou 42 -> 0.05 / 0.42
+    if max_abs > 1:
+        return series / 100.0
+
     return series
 
 
 def finite_pair(port, bench):
-    """Retourne deux tableaux alignés, sans NaN ni valeur infinie."""
-    pair = pd.DataFrame({"port": port, "bench": bench}).replace(
-        [np.inf, -np.inf], np.nan
-    ).dropna()
+    pair = pd.DataFrame({"port": port, "bench": bench}).replace([np.inf, -np.inf], np.nan).dropna()
+    if pair.empty:
+        return np.array([]), np.array([])
     return pair["port"].to_numpy(dtype=float), pair["bench"].to_numpy(dtype=float)
 
 
 # ==========================================================
-# CALCUL DES RATIOS
+# RATIOS FINANCIERS
 # ==========================================================
 
 def calculate_beta(port, bench):
@@ -67,12 +71,11 @@ def calculate_beta(port, bench):
     if len(port) < 2:
         return np.nan
 
-    benchmark_variance = np.var(bench, ddof=1)
-    if np.isclose(benchmark_variance, 0):
+    var_bench = np.var(bench, ddof=1)
+    if np.isclose(var_bench, 0):
         return np.nan
 
-    # Même convention ddof=1 au numérateur et au dénominateur.
-    return np.cov(port, bench, ddof=1)[0, 1] / benchmark_variance
+    return np.cov(port, bench, ddof=1)[0, 1] / var_bench
 
 
 def calculate_tracking_error(port, bench, annual_factor):
@@ -80,70 +83,70 @@ def calculate_tracking_error(port, bench, annual_factor):
     if len(port) < 2:
         return np.nan
 
-    active_returns = port - bench
-    return np.std(active_returns, ddof=1) * np.sqrt(annual_factor)
+    active = port - bench
+    return np.std(active, ddof=1) * np.sqrt(annual_factor)
 
 
 def calculate_information_ratio(port, bench, annual_factor):
-    """IR = rendement actif annualisé / tracking error annualisé."""
     port, bench = finite_pair(port, bench)
     if len(port) < 2:
         return np.nan
 
-    active_returns = port - bench
-    tracking_error = np.std(active_returns, ddof=1) * np.sqrt(annual_factor)
-    if np.isclose(tracking_error, 0):
+    active = port - bench
+    te = np.std(active, ddof=1) * np.sqrt(annual_factor)
+    if np.isclose(te, 0):
         return np.nan
 
-    annual_active_return = np.mean(active_returns) * annual_factor
-    return annual_active_return / tracking_error
+    active_annualized = np.mean(active) * annual_factor
+    return active_annualized / te
 
 
-def periodic_risk_free_rate(annual_rf, annual_factor):
-    """Convertit un taux sans risque annuel en taux par période."""
+def period_rf_from_annual(annual_rf, annual_factor):
     if annual_rf <= -1:
         return np.nan
     return (1 + annual_rf) ** (1 / annual_factor) - 1
 
 
 def calculate_sharpe(returns, annual_factor, rf=0):
-    """Sharpe annualisé avec excès de rendement par période."""
     returns = np.asarray(returns, dtype=float)
     returns = returns[np.isfinite(returns)]
     if len(returns) < 2:
         return np.nan
 
-    periodic_rf = periodic_risk_free_rate(rf, annual_factor)
-    if not np.isfinite(periodic_rf):
+    rf_period = period_rf_from_annual(rf, annual_factor)
+    if not np.isfinite(rf_period):
         return np.nan
 
-    excess_returns = returns - periodic_rf
-    volatility = np.std(excess_returns, ddof=1)
-    if np.isclose(volatility, 0):
+    excess = returns - rf_period
+    vol = np.std(excess, ddof=1)
+    if np.isclose(vol, 0):
         return np.nan
 
-    return np.mean(excess_returns) * np.sqrt(annual_factor) / volatility
+    return (np.mean(excess) * annual_factor) / (np.std(returns, ddof=1) * np.sqrt(annual_factor))
 
 
 def calculate_sortino(returns, annual_factor, rf=0):
-    """Sortino annualisé avec downside deviation (pas l'écart-type des pertes)."""
     returns = np.asarray(returns, dtype=float)
     returns = returns[np.isfinite(returns)]
     if len(returns) < 2:
         return np.nan
 
-    periodic_rf = periodic_risk_free_rate(rf, annual_factor)
-    if not np.isfinite(periodic_rf):
+    rf_period = period_rf_from_annual(rf, annual_factor)
+    if not np.isfinite(rf_period):
         return np.nan
 
-    excess_returns = returns - periodic_rf
-    downside_deviation = np.sqrt(np.mean(np.minimum(excess_returns, 0) ** 2))
-    if np.isclose(downside_deviation, 0):
+    excess = returns - rf_period
+    downside = excess[excess < 0]
+    if len(downside) == 0:
         return np.nan
 
-    annual_excess_return = np.mean(excess_returns) * annual_factor
-    annual_downside_deviation = downside_deviation * np.sqrt(annual_factor)
-    return annual_excess_return / annual_downside_deviation
+    downside_vol = np.std(downside, ddof=1)
+    if np.isclose(downside_vol, 0):
+        return np.nan
+
+    annual_return = np.mean(excess) * annual_factor
+    annual_downside = downside_vol * np.sqrt(annual_factor)
+    return annual_return / annual_downside
 
 
 def calculate_correlation(port, bench):
@@ -167,28 +170,31 @@ def calculate_cvar(returns, confidence=0.95):
     if len(returns) == 0:
         return np.nan
 
-    var = calculate_var(returns, confidence)
-    tail = returns[returns <= var]
-    return np.mean(tail) if len(tail) else np.nan
+    var_value = calculate_var(returns, confidence)
+    tail = returns[returns <= var_value]
+    if len(tail) == 0:
+        return np.nan
+    return np.mean(tail)
 
 
 def calculate_max_drawdown(nav_series):
-    nav_series = pd.to_numeric(nav_series, errors="coerce")
-    nav_series = nav_series.replace([np.inf, -np.inf], np.nan).dropna()
+    nav_series = pd.to_numeric(nav_series, errors="coerce").replace([np.inf, -np.inf], np.nan).dropna()
     if nav_series.empty:
         return np.nan, pd.Series(dtype=float)
 
-    cumulative_max = nav_series.cummax()
-    drawdown = nav_series / cumulative_max - 1
+    running_max = nav_series.cummax()
+    drawdown = nav_series / running_max - 1
     return drawdown.min(), drawdown
 
 
 def format_value(value, fmt):
-    return "N/D" if pd.isna(value) else format(value, fmt)
+    if pd.isna(value):
+        return "N/D"
+    return format(value, fmt)
 
 
 # ==========================================================
-# EXPORTS
+# EXPORT EXCEL / PDF
 # ==========================================================
 
 def generate_excel(df, kpis):
@@ -209,10 +215,8 @@ def generate_pdf(kpis):
     elems = [Paragraph("Rapport de Performance Financière", styles["Title"]), Spacer(1, 12)]
 
     for key, value in kpis.items():
-        elems.extend([
-            Paragraph(f"<b>{key}</b>: {value}", styles["BodyText"]),
-            Spacer(1, 6),
-        ])
+        elems.append(Paragraph(f"<b>{key}</b>: {value}", styles["BodyText"]))
+        elems.append(Spacer(1, 6))
 
     doc.build(elems)
     buffer.seek(0)
@@ -248,9 +252,13 @@ if df.empty or df.columns.empty:
     st.stop()
 
 date_col = df.columns[0]
-df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-df = df.dropna(subset=[date_col]).sort_values(date_col).reset_index(drop=True)
+try:
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+except Exception as exc:
+    st.error(f"❌ Erreur de conversion dates: {exc}")
+    st.stop()
 
+df = df.dropna(subset=[date_col]).sort_values(date_col).reset_index(drop=True)
 if df.empty:
     st.error("❌ Pas de dates valides.")
     st.stop()
@@ -294,25 +302,30 @@ if portfolio_nav == benchmark_nav or portfolio_ret == benchmark_ret:
     st.stop()
 
 # ==========================================================
-# EXTRACTION ET ALIGNEMENT DES DONNEES
+# DONNEES ET NORMALISATION
 # ==========================================================
 
 for column in [portfolio_nav, benchmark_nav, portfolio_ret, benchmark_ret]:
     df[column] = pd.to_numeric(df[column], errors="coerce")
 
-nav_df = df[[date_col, portfolio_nav, benchmark_nav]].dropna().reset_index(drop=True)
-if len(nav_df) < 2:
-    st.error("❌ Pas assez de données Base 100 valides.")
-    st.stop()
+def safe_total_return(series):
+    series = pd.to_numeric(series, errors="coerce").replace([np.inf, -np.inf], np.nan).dropna()
+    if len(series) < 2:
+        return np.nan
+    return series.iloc[-1] / series.iloc[0] - 1
 
-returns_pf_series = normalize_returns(df[portfolio_ret])
-returns_bm_series = normalize_returns(df[benchmark_ret])
-perf_df = pd.DataFrame({"pf": returns_pf_series, "bm": returns_bm_series}).replace(
-    [np.inf, -np.inf], np.nan
-).dropna()
+nav_pf = df[portfolio_nav].replace([np.inf, -np.inf], np.nan).dropna()
+nav_bm = df[benchmark_nav].replace([np.inf, -np.inf], np.nan).dropna()
 
+perf_pf_total = safe_total_return(nav_pf)
+perf_bm_total = safe_total_return(nav_bm)
+
+returns_pf_raw = normalize_returns(df[portfolio_ret])
+returns_bm_raw = normalize_returns(df[benchmark_ret])
+
+perf_df = pd.DataFrame({"pf": returns_pf_raw, "bm": returns_bm_raw}).replace([np.inf, -np.inf], np.nan).dropna()
 if len(perf_df) < 2:
-    st.error("❌ Pas assez de données de rendements alignées.")
+    st.error("❌ Pas assez de données de rendement alignées.")
     st.stop()
 
 returns_pf = perf_df["pf"].to_numpy(dtype=float)
@@ -320,13 +333,10 @@ returns_bm = perf_df["bm"].to_numpy(dtype=float)
 active_returns = returns_pf - returns_bm
 
 # ==========================================================
-# CALCUL KPI
+# KPI
 # ==========================================================
 
-perf_pf_total = nav_df[portfolio_nav].iloc[-1] / nav_df[portfolio_nav].iloc[0] - 1
-perf_bm_total = nav_df[benchmark_nav].iloc[-1] / nav_df[benchmark_nav].iloc[0] - 1
 alpha = perf_pf_total - perf_bm_total
-
 beta = calculate_beta(returns_pf, returns_bm)
 volatility_pf = np.std(returns_pf, ddof=1) * np.sqrt(annual_factor)
 volatility_bm = np.std(returns_bm, ddof=1) * np.sqrt(annual_factor)
@@ -337,12 +347,8 @@ sortino = calculate_sortino(returns_pf, annual_factor)
 corr = calculate_correlation(returns_pf, returns_bm)
 var95 = calculate_var(returns_pf)
 cvar95 = calculate_cvar(returns_pf)
-max_dd, dd_curve = calculate_max_drawdown(nav_df[portfolio_nav])
+max_dd, dd_curve = calculate_max_drawdown(df[portfolio_nav])
 hit_ratio = (active_returns > 0).mean()
-
-# ==========================================================
-# CONSTRUCTION KPI
-# ==========================================================
 
 kpis = {
     "📅 Fréquence": frequency,
@@ -370,48 +376,47 @@ kpis = {
 
 st.header("📊 Indicateurs Clés de Performance")
 metrics = st.columns(4)
-for counter, (key, value) in enumerate(kpis.items()):
-    metrics[counter % 4].metric(key, value)
+for i, (key, value) in enumerate(kpis.items()):
+    metrics[i % 4].metric(key, value)
 
 st.header("📋 Tableau Détaillé")
 kpi_df = pd.DataFrame(list(kpis.items()), columns=["Indicateur", "Valeur"])
 st.dataframe(kpi_df, use_container_width=True, hide_index=True)
 
-st.header("📈 Visualisations")
-col_g1, col_g2 = st.columns(2)
+# ==========================================================
+# GRAPHIQUES
+# ==========================================================
 
-with col_g1:
+st.header("📈 Visualisations")
+col1, col2 = st.columns(2)
+
+with col1:
     st.subheader("Évolution Base 100")
-    fig = px.line(nav_df, x=date_col, y=[portfolio_nav, benchmark_nav])
+    fig = px.line(df, x=date_col, y=[portfolio_nav, benchmark_nav])
     fig.update_layout(hovermode="x unified")
     st.plotly_chart(fig, use_container_width=True)
 
-with col_g2:
+with col2:
     st.subheader("Rendements Périodiques")
     fig2 = px.bar(df, x=date_col, y=[portfolio_ret, benchmark_ret], barmode="group")
     st.plotly_chart(fig2, use_container_width=True)
 
-col_g3, col_g4 = st.columns(2)
+col3, col4 = st.columns(2)
 
-with col_g3:
+with col3:
     st.subheader("Drawdown")
     fig_dd = go.Figure()
-    fig_dd.add_trace(go.Scatter(
-        x=nav_df[date_col],
-        y=dd_curve.to_numpy() * 100,
-        fill="tozeroy",
-        line=dict(color="red"),
-    ))
+    fig_dd.add_trace(go.Scatter(x=df[date_col], y=dd_curve.to_numpy() * 100, fill="tozeroy", line=dict(color="red")))
     fig_dd.update_layout(title="Drawdown (%)", xaxis_title="Date", yaxis_title="Drawdown (%)")
     st.plotly_chart(fig_dd, use_container_width=True)
 
-with col_g4:
+with col4:
     st.subheader("Distribution Rendements")
     fig_hist = px.histogram(returns_pf * 100, nbins=30, title="Distribution")
     st.plotly_chart(fig_hist, use_container_width=True)
 
 # ==========================================================
-# EXPORTS
+# TELECHARGEMENTS
 # ==========================================================
 
 st.header("📥 Téléchargements")
