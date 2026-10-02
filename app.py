@@ -1391,7 +1391,7 @@ st.subheader("✅ Forces")
 
 if len(commentaires["Forces"]) > 0:
 
-    for item in commentaires["Forces"\]:
+    for item in commentaires["Forces"]:
         st.write(f"• {item}")
 
 else:
@@ -1404,7 +1404,7 @@ st.subheader("⚠️ Points de vigilance")
 
 if len(commentaires["Vigilances"]) > 0:
 
-    for item in commentaires["Vigilances"\]:
+    for item in commentaires["Vigilances"]:
         st.write(f"• {item}")
 
 else:
