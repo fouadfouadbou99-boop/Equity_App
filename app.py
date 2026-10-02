@@ -1360,7 +1360,7 @@ with st.expander(
 
     if len(commentaires["Forces"]) > 0:
 
-        for item in commentaires["Forces"\]:
+        for item in commentaires["Forces"\]: 
             st.write(f"• {item}")
 
     else:
