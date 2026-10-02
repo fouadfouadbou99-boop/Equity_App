@@ -1296,21 +1296,6 @@ kpis = {
             batting_average,
             ".2%"
         ),
-}
-commentaire = generate_commentary(
-    annual_return_pf,
-    annual_return_bm,
-    alpha,
-    beta,
-    sharpe,
-    sortino,
-    ir,
-    volatility_pf,
-    volatility_bm,
-    max_dd,
-    hit_ratio,
-    up_capture,
-    down_capture,
 )
 commentaires = generate_commentary(
     portfolio_nav,
