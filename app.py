@@ -1341,6 +1341,37 @@ with st.expander(
     expanded=True
 ):
 
+    st.subheader("🎯 Diagnostic Global")
+
+    st.success(
+        f"{commentaires['Diagnostic']} | "
+        f"Score : {commentaires['Score']}/100"
+    )
+
+    st.subheader("✅ Forces")
+
+    ...
+
+    st.subheader("⚠️ Points de vigilance")
+
+    ...
+
+    st.subheader("1️⃣ Performance")
+    st.write(commentaires["Performance"])
+
+    st.subheader("2️⃣ Risque")
+    st.write(commentaires["Risque"])
+
+    st.subheader("3️⃣ Analyse Relative")
+    st.write(commentaires["Analyse Relative"])
+
+    st.subheader("4️⃣ Synthèse")
+    st.success(commentaires["Synthèse"])
+
+st.markdown("---")
+
+st.header("📊 Indicateurs Clés de Performance")
+
 # ======================================================
 # DIAGNOSTIC GLOBAL
 # ======================================================
