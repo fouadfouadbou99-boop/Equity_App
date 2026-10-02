@@ -1341,6 +1341,10 @@ with st.expander(
     expanded=True
 ):
 
+    # ------------------------------------------------------
+    # DIAGNOSTIC
+    # ------------------------------------------------------
+
     st.subheader("🎯 Diagnostic Global")
 
     st.success(
@@ -1348,123 +1352,69 @@ with st.expander(
         f"Score : {commentaires['Score']}/100"
     )
 
+    # ------------------------------------------------------
+    # FORCES
+    # ------------------------------------------------------
+
     st.subheader("✅ Forces")
 
-    ...
+    if len(commentaires["Forces"]) > 0:
+
+        for item in commentaires["Forces"\]:
+            st.write(f"• {item}")
+
+    else:
+
+        st.write(
+            "Aucun point fort significatif identifié."
+        )
+
+    # ------------------------------------------------------
+    # VIGILANCES
+    # ------------------------------------------------------
 
     st.subheader("⚠️ Points de vigilance")
 
-    ...
+    if len(commentaires["Vigilances"]) > 0:
+
+        for item in commentaires["Vigilances"\]:
+            st.write(f"• {item}")
+
+    else:
+
+        st.write(
+            "Aucun point de vigilance majeur détecté."
+        )
+
+    # ------------------------------------------------------
+    # PERFORMANCE
+    # ------------------------------------------------------
 
     st.subheader("1️⃣ Performance")
     st.write(commentaires["Performance"])
 
+    # ------------------------------------------------------
+    # RISQUE
+    # ------------------------------------------------------
+
     st.subheader("2️⃣ Risque")
     st.write(commentaires["Risque"])
 
+    # ------------------------------------------------------
+    # ANALYSE RELATIVE
+    # ------------------------------------------------------
+
     st.subheader("3️⃣ Analyse Relative")
     st.write(commentaires["Analyse Relative"])
+
+    # ------------------------------------------------------
+    # SYNTHESE
+    # ------------------------------------------------------
 
     st.subheader("4️⃣ Synthèse")
     st.success(commentaires["Synthèse"])
 
 st.markdown("---")
-
-st.header("📊 Indicateurs Clés de Performance")
-
-# ======================================================
-# DIAGNOSTIC GLOBAL
-# ======================================================
-
-st.subheader("🎯 Diagnostic Global")
-
-st.success(
-    f"{commentaires['Diagnostic']} | "
-    f"Score : {commentaires['Score']}/100"
-)
-
-# ======================================================
-# FORCES
-# ======================================================
-
-st.subheader("✅ Forces")
-
-if len(commentaires["Forces"]) > 0:
-
-    for item in commentaires["Forces"]:
-        st.write(f"• {item}")
-
-else:
-
-    st.write(
-        "Aucun point fort significatif identifié."
-    )
-
-st.subheader("⚠️ Points de vigilance")
-
-if len(commentaires["Vigilances"]) > 0:
-
-    for item in commentaires["Vigilances"]:
-        st.write(f"• {item}")
-
-else:
-
-    st.write(
-        "Aucun point de vigilance majeur détecté."
-    )
-
-
-# ======================================================
-# PERFORMANCE
-# ======================================================
-
-st.subheader("1️⃣ Performance")
-
-st.write(
-    commentaires["Performance"]
-)
-
-# ======================================================
-# RISQUE
-# ======================================================
-
-st.subheader("2️⃣ Risque")
-
-st.write(
-    commentaires["Risque"]
-)
-
-# ======================================================
-# ANALYSE RELATIVE
-# ======================================================
-
-st.subheader("3️⃣ Analyse Relative")
-
-st.write(
-    commentaires["Analyse Relative"]
-)
-
-# ======================================================
-# SYNTHESE
-# ======================================================
-
-st.subheader("4️⃣ Synthèse")
-
-st.ccess(
-    commentaires["Synthèse"]
-)
-
-# ==========================================================
-# KPI
-# ==========================================================
-
-st.header("📊 Indicateurs Clés de Performance")
-
-metrics = st.columns(4)
-
-for i, (key, value) in enumerate(kpis.items()):
-    metrics[i % 4].metric(key, value)
-
 
 # ==========================================================
 # KPI
@@ -1554,7 +1504,7 @@ with col3:
         )
     )
 
-    fig_dd.update_layout(
+    g_dd.update_layout(
         title="Drawdown (%)",
         xaxis_title="Date",
         yaxis_title="Drawdown (%)"
@@ -1572,7 +1522,7 @@ with col4:
     fig_hist = px.histogram(
         returns_pf * 100,
         nbins=30,
-        title="Distribution"
+        title="Distribution des rendements"
     )
 
     st.plotly_chart(
