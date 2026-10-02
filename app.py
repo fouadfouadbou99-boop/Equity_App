@@ -891,10 +891,10 @@ def detect_analysis_subject(name):
 
 
 # ==========================================================
-# COMMENTAIRE DE GESTION UNIVERSEL
+# MOTEUR EXPERT D'ANALYSE FINANCIERE
 # ==========================================================
 def generate_commentary(
-    subject_name,
+    asset_name,
     annual_return_pf,
     annual_return_bm,
     alpha,
@@ -910,10 +910,162 @@ def generate_commentary(
     down_capture,
 ):
 
-    analysis = detect_analysis_subject(subject_name)
+    subject = "l'actif analysé"
 
-    subject = analysis["subject"]
-    category = analysis["category"]
+    # ======================================================
+    # SCORING
+    # ======================================================
+
+    score = 0
+
+    forces = []
+    vigilances = []
+
+    # Alpha
+
+    if pd.notna(alpha):
+
+        if alpha > 0:
+
+            score += 20
+
+            forces.append(
+                f"Alpha positif ({alpha:.2%}) traduisant une création de valeur."
+            )
+
+        else:
+
+            vigilances.append(
+                f"Alpha négatif ({alpha:.2%})."
+            )
+
+    # Information Ratio
+
+    if pd.notna(ir):
+
+        if ir >= 1:
+
+            score += 20
+
+            forces.append(
+                f"Information Ratio excellent ({ir:.2f})."
+            )
+
+        elif ir >= 0.5:
+
+            score += 10
+
+        else:
+
+            vigilances.append(
+                f"Information Ratio faible ({ir:.2f})."
+            )
+
+    # Sharpe
+
+    if pd.notna(sharpe):
+
+        if sharpe >= 2:
+
+            score += 20
+
+            forces.append(
+                f"Ratio de Sharpe élevé ({sharpe:.2f})."
+            )
+
+        elif sharpe >= 1:
+
+            score += 10
+
+        else:
+
+            vigilances.append(
+                f"Ratio de Sharpe modeste ({sharpe:.2f})."
+            )
+
+    # Sortino
+
+    if pd.notna(sortino):
+
+        if sortino >= 2:
+
+            score += 15
+
+            forces.append(
+                f"Excellente maîtrise du risque baissier (Sortino {sortino:.2f})."
+            )
+
+        elif sortino >= 1:
+
+            score += 8
+
+    # Drawdown
+
+    if pd.notna(max_dd):
+
+        if max_dd > -0.15:
+
+            score += 10
+
+        elif max_dd < -0.30:
+
+            vigilances.append(
+                f"Drawdown significatif ({max_dd:.2%})."
+            )
+
+    # Hit Ratio
+
+    if pd.notna(hit_ratio):
+
+        if hit_ratio > 0.50:
+
+            score += 10
+
+            forces.append(
+                f"Surperformance plus fréquente que la sous-performance (Hit Ratio {hit_ratio:.2%})."
+            )
+
+    # Down Capture
+
+    if pd.notna(down_capture):
+
+        if down_capture < 1:
+
+            score += 15
+
+            forces.append(
+                f"Bonne résistance dans les marchés baissiers (Down Capture {down_capture:.2f})."
+            )
+
+        else:
+
+            vigilances.append(
+                f"Sensibilité élevée aux phases baissières (Down Capture {down_capture:.2f})."
+            )
+
+    # ======================================================
+    # DIAGNOSTIC
+    # ======================================================
+
+    if score >= 85:
+
+        rating = "🟢 EXCELLENT"
+
+    elif score >= 70:
+
+        rating = "🟢 BON"
+
+    elif score >= 55:
+
+        rating = "🟡 SATISFAISANT"
+
+    elif score >= 40:
+
+        rating = "🟠 MOYEN"
+
+    else:
+
+        rating = "🔴 FAIBLE"
 
     # ======================================================
     # PERFORMANCE
@@ -924,242 +1076,107 @@ def generate_commentary(
     if ecart_perf > 0:
 
         perf_text = (
-            f"{subject.capitalize()} affiche une performance annualisée "
-            f"de {annual_return_pf:.2%}, supérieure à celle du benchmark "
+            f"{subject.capitalize()} affiche une performance annualisée de "
+            f"{annual_return_pf:.2%}, supérieure à celle du benchmark "
             f"({annual_return_bm:.2%}). "
 
-            f"La surperformance observée atteint "
-            f"{ecart_perf:.2%}, ce qui traduit une évolution "
-            f"plus favorable que celle de l'indice de référence. "
+            f"La surperformance atteint {ecart_perf:.2%}, ce qui traduit "
+            f"une dynamique particulièrement favorable sur la période étudiée. "
 
-            f"Cette dynamique met en évidence une création de valeur "
-            f"significative relativement au marché sur la période étudiée."
+            f"Cette évolution met en évidence une capacité à générer une "
+            f"valorisation significativement supérieure à celle de son "
+            f"indice de référence."
         )
 
     else:
 
         perf_text = (
-            f"{subject.capitalize()} affiche une performance annualisée "
-            f"de {annual_return_pf:.2%} contre {annual_return_bm:.2%} "
-            f"pour le benchmark. "
+            f"{subject.capitalize()} affiche une performance annualisée de "
+            f"{annual_return_pf:.2%} contre {annual_return_bm:.2%} pour le benchmark. "
 
-            f"La sous-performance observée de "
-            f"{abs(ecart_perf):.2%} traduit une évolution moins favorable "
-            f"que celle du marché de référence sur la période analysée."
+            f"La sous-performance observée de {abs(ecart_perf):.2%} traduit "
+            f"une évolution moins favorable que celle du marché de référence."
         )
 
     # ======================================================
     # RISQUE
     # ======================================================
 
-    if beta >= 1.20:
-
-        beta_comment = (
-            "Le bêta est sensiblement supérieur à 1, ce qui indique "
-            "une forte sensibilité aux variations du marché."
-        )
-
-    elif beta >= 1.00:
-
-        beta_comment = (
-            "Le bêta est légèrement supérieur à 1 et traduit une "
-            "sensibilité modérément plus élevée que celle du marché."
-        )
-
-    elif beta >= 0.80:
-
-        beta_comment = (
-            "Le bêta proche de 1 révèle un comportement globalement "
-            "aligné sur celui du marché."
-        )
-
-    else:
-
-        beta_comment = (
-            "Le bêta inférieur à 1 traduit un profil relativement défensif."
-        )
-
-    if volatility_pf > volatility_bm:
-
-        vol_comment = (
-            f"La volatilité annualisée ({volatility_pf:.2%}) est supérieure "
-            f"à celle du benchmark ({volatility_bm:.2%}), ce qui indique "
-            f"un niveau de risque plus élevé."
-        )
-
-    else:
-
-        vol_comment = (
-            f"La volatilité annualisée ({volatility_pf:.2%}) est inférieure "
-            f"à celle du benchmark ({volatility_bm:.2%}), ce qui traduit "
-            f"une meilleure maîtrise des fluctuations."
-        )
-
     risk_text = (
-        f"{vol_comment} "
-        f"{beta_comment} "
-        f"Le drawdown maximal ressort à {max_dd:.2%}. "
-        f"Cet indicateur représente le recul le plus important "
-        f"observé entre un point haut et un point bas sur la période."
+        f"La volatilité annualisée ressort à {volatility_pf:.2%}, "
+        f"contre {volatility_bm:.2%} pour le benchmark. "
+        f"Le bêta de {beta:.2f} mesure la sensibilité de l'actif aux "
+        f"mouvements du marché. "
+        f"Le drawdown maximal atteint {max_dd:.2%}, représentant "
+        f"la baisse la plus importante observée entre un point haut "
+        f"et un point bas sur la période analysée."
     )
 
     # ======================================================
     # ANALYSE RELATIVE
     # ======================================================
 
-    if alpha >= 0:
-        alpha_text = (
-            f"L'alpha ressort à {alpha:.2%}. "
-            f"Cet indicateur est positif et suggère une création "
-            f"de valeur au-delà de celle expliquée par le risque de marché."
-        )
-    else:
-        alpha_text = (
-            f"L'alpha ressort à {alpha:.2%}. "
-            f"Cette valeur indique une performance inférieure à celle "
-            f"attendue compte tenu du risque de marché supporté."
-        )
-
-    if ir >= 1:
-        ir_text = (
-            f"L'Information Ratio de {ir:.2f} est excellent et traduit "
-            f"une surperformance particulièrement régulière."
-        )
-    elif ir >= 0.5:
-        ir_text = (
-            f"L'Information Ratio de {ir:.2f} apparaît satisfaisant "
-            f"et met en évidence une création de valeur relativement stable."
-        )
-    elif ir > 0:
-        ir_text = (
-            f"L'Information Ratio de {ir:.2f} reste positif "
-            f"mais demeure perfectible."
-        )
-    else:
-        ir_text = (
-            f"L'Information Ratio de {ir:.2f} indique une rémunération "
-            f"insuffisante du risque actif."
-        )
-
-    if sharpe >= 2:
-        sharpe_text = (
-            f"Le ratio de Sharpe ({sharpe:.2f}) est excellent et traduit "
-            f"un couple rendement-risque particulièrement attractif."
-        )
-    elif sharpe >= 1:
-        sharpe_text = (
-            f"Le ratio de Sharpe ({sharpe:.2f}) est satisfaisant."
-        )
-    elif sharpe > 0:
-        sharpe_text = (
-            f"Le ratio de Sharpe ({sharpe:.2f}) demeure positif "
-            f"mais reste modeste."
-        )
-    else:
-        sharpe_text = (
-            f"Le ratio de Sharpe ({sharpe:.2f}) est défavorable."
-        )
-
-    if sortino >= 2:
-        sortino_text = (
-            f"Le ratio de Sortino ({sortino:.2f}) traduit une excellente "
-            f"gestion du risque baissier."
-        )
-    elif sortino >= 1:
-        sortino_text = (
-            f"Le ratio de Sortino ({sortino:.2f}) apparaît satisfaisant."
-        )
-    else:
-        sortino_text = (
-            f"Le ratio de Sortino ({sortino:.2f}) reste relativement faible."
-        )
-
-    hit_text = (
-        f"Le Hit Ratio atteint {hit_ratio:.2%}, ce qui signifie que "
-        f"{subject} surperforme le benchmark durant cette proportion des périodes observées."
-    )
-
-    up_text = (
-        f"L'Up Capture ({up_capture:.2f}) mesure le comportement relatif "
-        f"dans les phases haussières du marché."
-        if pd.notna(up_capture)
-        else ""
-    )
-
-    down_text = (
-        f"Le Down Capture ({down_capture:.2f}) mesure le comportement relatif "
-        f"dans les phases de baisse du marché."
-        if pd.notna(down_capture)
-        else ""
-    )
-
     active_text = (
-        f"{alpha_text} "
-        f"{ir_text} "
-        f"{sharpe_text} "
-        f"{sortino_text} "
-        f"{hit_text} "
-        f"{up_text} "
-        f"{down_text}"
+        f"L'alpha ressort à {alpha:.2%}. Cet indicateur mesure la performance "
+        f"excédentaire par rapport à celle expliquée par le risque de marché. "
+
+        f"L'Information Ratio s'établit à {ir:.2f} et permet d'évaluer "
+        f"la régularité de la surperformance relative au benchmark. "
+
+        f"Le ratio de Sharpe ({sharpe:.2f}) mesure le rendement obtenu "
+        f"pour chaque unité de risque total supportée tandis que le ratio "
+        f"de Sortino ({sortino:.2f}) se concentre spécifiquement sur "
+        f"le risque baissier. "
+
+        f"Le Hit Ratio de {hit_ratio:.2%} indique la proportion de périodes "
+        f"durant lesquelles l'actif a surperformé son benchmark. "
+
+        f"L'Up Capture ({up_capture:.2f}) mesure la participation aux phases "
+        f"haussières du marché alors que le Down Capture ({down_capture:.2f}) "
+        f"évalue le comportement lors des phases de correction."
     )
 
     # ======================================================
     # SYNTHESE
     # ======================================================
 
-    score = 0
-
-    if alpha > 0:
-        score += 1
-
-    if ir > 0.5:
-        score += 1
-
-    if sharpe > 1:
-        score += 1
-
-    if hit_ratio > 0.5:
-        score += 1
-
-    if pd.notna(down_capture) and down_capture < 1:
-        score += 1
-
-    if score >= 4:
-
-        if category == "portfolio":
-
-            conclusion = (
-                "Dans l'ensemble, les indicateurs mettent en évidence "
-                "un profil favorable. La performance relative, les ratios "
-                "ajustés du risque et la régularité des résultats "
-                "suggèrent une gestion efficace sur la période étudiée."
-            )
-
-        else:
-
-            conclusion = (
-                "Dans l'ensemble, les indicateurs mettent en évidence "
-                "un actif ayant affiché une performance robuste relativement "
-                "à son benchmark, avec un profil rendement-risque favorable."
-            )
-
-    elif score >= 2:
+    if score >= 85:
 
         conclusion = (
-            "Les indicateurs apparaissent globalement satisfaisants "
-            "mais présentent certains points de vigilance qui devront "
-            "être suivis au cours des prochaines périodes."
+            "L'ensemble des indicateurs convergent vers un diagnostic très favorable. "
+            "La performance observée est élevée, la création de valeur apparaît "
+            "importante et les ratios ajustés du risque ressortent à des niveaux "
+            "particulièrement robustes. Le profil rendement-risque constitue "
+            "l'un des principaux points forts de l'actif analysé."
+        )
+
+    elif score >= 70:
+
+        conclusion = (
+            "L'actif présente un profil globalement solide. La majorité des "
+            "indicateurs sont orientés positivement et témoignent d'une "
+            "bonne qualité de performance relativement au risque assumé."
+        )
+
+    elif score >= 55:
+
+        conclusion = (
+            "Les indicateurs apparaissent globalement satisfaisants, même si "
+            "certains points de vigilance nécessitent un suivi particulier."
         )
 
     else:
 
         conclusion = (
-            "L'analyse met en évidence un profil plus contrasté. "
-            "La performance observée ne compense pas pleinement le niveau "
-            "de risque supporté sur la période étudiée."
+            "Le profil ressort plus contrasté. Les performances observées "
+            "ne compensent pas pleinement les risques supportés sur la période."
         )
 
     return {
+        "Diagnostic": rating,
+        "Score": score,
+        "Forces": forces,
+        "Vigilances": vigilances,
         "Performance": perf_text,
         "Risque": risk_text,
         "Analyse Relative": active_text,
@@ -1324,19 +1341,112 @@ with st.expander(
     expanded=True
 ):
 
+    # ======================================================
+    # DIAGNOSTIC GLOBAL
+    # ======================================================
+
+    st.subheader("🎯 Diagnostic Global")
+
+    st.success(
+        f"{commentaires['Diagnostic']} | "
+        f"Score : {commentaires['Score']}/100"
+    )
+
+    # ======================================================
+    # FORCES
+    # ======================================================
+
+    st.subheader("✅ Forces")
+
+    if len(commentaires["Forces"]) > 0:
+
+        for item in commentaires["Forces"\]:
+            st.write(f"• {item}")
+
+    else:
+
+        st.write(
+            "Aucun point fort significatif identifié."
+        )
+
+    # ======================================================
+    # POINTS DE VIGILANCE
+    # ======================================================
+
+    st.subheader("⚠️ Points de vigilance")
+
+    if len(commentaires["Vigilances"]) > 0:
+
+        for item in commentaires["Vigilances"\]:
+            st.write(f"• {item}")
+
+    else:
+
+        st.write(
+            "Aucun point de vigilance majeur détecté."
+        )
+
+    # ======================================================
+    # PERFORMANCE
+    # ======================================================
+
     st.subheader("1️⃣ Performance")
-    st.write(commentaires["Performance"])
+
+    st.write(
+        commentaires["Performance"]
+    )
+
+    # ======================================================
+    # RISQUE
+    # ======================================================
 
     st.subheader("2️⃣ Risque")
-    st.write(commentaires["Risque"])
+
+    st.write(
+        commentaires["Risque"]
+    )
+
+    # ======================================================
+    # ANALYSE RELATIVE
+    # ======================================================
 
     st.subheader("3️⃣ Analyse Relative")
-    st.write(commentaires["Analyse Relative"])
+
+    st.write(
+        commentaires["Analyse Relative"]
+    )
+
+    # ======================================================
+    # SYNTHESE
+    # ======================================================
 
     st.subheader("4️⃣ Synthèse")
-    st.success(commentaires["Synthèse"])
+
+    st.success(
+        commentaires["Synthèse"]
+    )
 
 st.markdown("---")
+
+# ==========================================================
+# KPI
+# ==========================================================
+
+st.header("📊 Indicateurs Clés de Performance")
+
+metrics = st.columns(4)
+
+for i, (key, value) in enumerate(kpis.items()):
+    metrics[i % 4].metric(key, value)
+
+# ==========================================================
+# TABLEAU DETAILLE
+# ==========================================================
+
+st.header("📋 Tableau Détaillé")
+
+kpi_df = pd.DataFrame({
+    "Indicateur": [str(k) for k in 
 
 # ==========================================================
 # KPI
