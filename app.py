@@ -1330,11 +1330,11 @@ with st.expander(
     st.subheader("2️⃣ Risque")
     st.write(commentaires["Risque"])
 
-    st.subheader("3️⃣ Gestion Active")
-    st.write(commentaires["Gestion Active"])
+    st.subheader("3️⃣ Analyse Relative")
+    st.write(commentaires["Analyse Relative"])
 
-    st.subheader("4️⃣ Conclusion")
-    st.success(commentaires["Conclusion"])
+    st.subheader("4️⃣ Synthèse")
+    st.success(commentaires["Synthèse"])
 
 st.markdown("---")
 
