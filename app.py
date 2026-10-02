@@ -1341,10 +1341,6 @@ with st.expander(
     expanded=True
 ):
 
-    # ------------------------------------------------------
-    # DIAGNOSTIC
-    # ------------------------------------------------------
-
     st.subheader("🎯 Diagnostic Global")
 
     st.success(
@@ -1352,70 +1348,45 @@ with st.expander(
         f"Score : {commentaires['Score']}/100"
     )
 
-    # ------------------------------------------------------
-# FORCES
-# ------------------------------------------------------
+    st.subheader("✅ Forces")
 
-st.subheader("✅ Forces")
+    if len(commentaires["Forces"]) > 0:
 
-if len(commentaires["Forces"]) > 0:
+        for item in commentaires["Forces"\]:
+            st.write(f"• {item}")
 
-    for item in commentaires["Forces"\]:
-        st.write(f"• {item}")
+    else:
 
-else:
+        st.write(
+            "Aucun point fort significatif identifié."
+        )
 
-    st.write(
-        "Aucun point fort significatif identifié."
-    )
+    st.subheader("⚠️ Points de vigilance")
 
-# ------------------------------------------------------
-# VIGILANCES
-# ------------------------------------------------------
+    if len(commentaires["Vigilances"]) > 0:
 
-st.subheader("⚠️ Points de vigilance")
+        for item in commentaires["Vigilances"\]:
+            st.write(f"• {item}")
 
-if len(commentaires["Vigilances"]) > 0:
+    else:
 
-    for item in commentaires["Vigilances"\]:
-        st.write(f"• {item}")
-
-else:
-
-    st.write(
-        "Aucun point de vigilance majeur détecté."
-    )
-
-    # ------------------------------------------------------
-    # PERFORMANCE
-    # ------------------------------------------------------
+        st.write(
+            "Aucun point de vigilance majeur détecté."
+        )
 
     st.subheader("1️⃣ Performance")
     st.write(commentaires["Performance"])
 
-    # ------------------------------------------------------
-    # RISQUE
-    # ------------------------------------------------------
-
     st.subheader("2️⃣ Risque")
     st.write(commentaires["Risque"])
 
-    # ------------------------------------------------------
-    # ANALYSE RELATIVE
-    # ------------------------------------------------------
-
     st.subheader("3️⃣ Analyse Relative")
     st.write(commentaires["Analyse Relative"])
-
-    # ------------------------------------------------------
-    # SYNTHESE
-    # ------------------------------------------------------
 
     st.subheader("4️⃣ Synthèse")
     st.success(commentaires["Synthèse"])
 
 st.markdown("---")
-
 # ==========================================================
 # KPI
 # ==========================================================
