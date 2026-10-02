@@ -1391,13 +1391,26 @@ st.subheader("✅ Forces")
 
 if len(commentaires["Forces"]) > 0:
 
-    for item in commentaires["Forces"\]:
+    for item in commentaires["Forces"]:
         st.write(f"• {item}")
 
 else:
 
     st.write(
         "Aucun point fort significatif identifié."
+    )
+
+st.subheader("⚠️ Points de vigilance")
+
+if len(commentaires["Vigilances"]) > 0:
+
+    for item in commentaires["Vigilances"]:
+        st.write(f"• {item}")
+
+else:
+
+    st.write(
+        "Aucun point de vigilance majeur détecté."
     )
 
 # ======================================================
