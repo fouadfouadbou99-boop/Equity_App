@@ -1352,15 +1352,15 @@ with st.expander(
         f"Score : {commentaires['Score']}/100"
     )
 
-# ------------------------------------------------------
-# FORCES
-# ------------------------------------------------------
+    # ------------------------------------------------------
+    # FORCES
+    # ------------------------------------------------------
 
-st.subheader("✅ Forces")
+    st.subheader("✅ Forces")
 
 if len(commentaires["Forces"]) > 0:
 
-    for item in commentaires["Forces"\]:
+for item in commentaires["Forces"\]:
         st.write(f"• {item}")
 
 else:
@@ -1369,11 +1369,11 @@ else:
         "Aucun point fort significatif identifié."
     )
 
-# ------------------------------------------------------
-# VIGILANCES
-# ------------------------------------------------------
+    # ------------------------------------------------------
+    # VIGILANCES
+    # ------------------------------------------------------
 
-st.subheader("⚠️ Points de vigilance")
+    st.subheader("⚠️ Points de vigilance")
 
 if len(commentaires["Vigilances"]) > 0:
 
