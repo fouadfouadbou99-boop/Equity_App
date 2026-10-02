@@ -1358,16 +1358,29 @@ with st.expander(
 
     st.subheader("✅ Forces")
 
-    if len(commentaires["Forces"]) > 0:
+if len(commentaires["Forces"]) > 0:
 
-        for item in commentaires["Forces"\]: 
-            st.write(f"• {item}")
+    for item in commentaires["Forces"\]:
+        st.write(f"• {item}")
 
-    else:
+else:
 
-        st.write(
-            "Aucun point fort significatif identifié."
-        )
+    st.write(
+        "Aucun point fort significatif identifié."
+    )
+
+st.subheader("⚠️ Points de vigilance")
+
+if len(commentaires["Vigilances"]) > 0:
+
+    for item in commentaires["Vigilances"\]:
+        st.write(f"• {item}")
+
+else:
+
+    st.write(
+        "Aucun point de vigilance majeur détecté."
+    )
 
     # ======================================================
     # POINTS DE VIGILANCE
