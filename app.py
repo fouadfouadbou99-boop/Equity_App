@@ -856,9 +856,45 @@ batting_average = np.mean(
     returns_pf > returns_bm
 )
 # ==========================================================
-# COMMENTAIRE DE GESTION AVANCE
+# DETECTION DU TYPE D'ANALYSE
+# ==========================================================
+def detect_analysis_subject(name):
+
+    if pd.isna(name):
+        return {
+            "subject": "l'actif analysé",
+            "category": "asset"
+        }
+
+    text = str(name).lower()
+
+    portfolio_keywords = [
+        "portefeuille",
+        "portfolio",
+        "opcvm",
+        "fonds",
+        "fund",
+        "sicav",
+        "fcp"
+    ]
+
+    if any(word in text for word in portfolio_keywords):
+        return {
+            "subject": "le portefeuille",
+            "category": "portfolio"
+        }
+
+    return {
+        "subject": "l'actif analysé",
+        "category": "asset"
+    }
+
+
+# ==========================================================
+# COMMENTAIRE DE GESTION UNIVERSEL
 # ==========================================================
 def generate_commentary(
+    subject_name,
     annual_return_pf,
     annual_return_bm,
     alpha,
@@ -874,6 +910,11 @@ def generate_commentary(
     down_capture,
 ):
 
+    analysis = detect_analysis_subject(subject_name)
+
+    subject = analysis["subject"]
+    category = analysis["category"]
+
     # ======================================================
     # PERFORMANCE
     # ======================================================
@@ -881,174 +922,189 @@ def generate_commentary(
     ecart_perf = annual_return_pf - annual_return_bm
 
     if ecart_perf > 0:
+
         perf_text = (
-            f"Le portefeuille affiche une performance annualisée de "
-            f"{annual_return_pf:.2%}, supérieure à celle du benchmark "
-            f"({annual_return_bm:.2%}). La surperformance atteint "
-            f"{ecart_perf:.2%}, ce qui traduit une capacité significative "
-            f"à générer de la valeur sur la période analysée. "
-            f"Cette évolution témoigne d'une allocation efficace des actifs "
-            f"et d'une sélection de titres globalement favorable."
+            f"{subject.capitalize()} affiche une performance annualisée "
+            f"de {annual_return_pf:.2%}, supérieure à celle du benchmark "
+            f"({annual_return_bm:.2%}). "
+
+            f"La surperformance observée atteint "
+            f"{ecart_perf:.2%}, ce qui traduit une évolution "
+            f"plus favorable que celle de l'indice de référence. "
+
+            f"Cette dynamique met en évidence une création de valeur "
+            f"significative relativement au marché sur la période étudiée."
         )
+
     else:
+
         perf_text = (
-            f"Le portefeuille affiche une performance annualisée de "
-            f"{annual_return_pf:.2%} contre {annual_return_bm:.2%} "
-            f"pour son benchmark. La sous-performance observée de "
-            f"{abs(ecart_perf):.2%} suggère que les choix d'allocation "
-            f"ou de sélection n'ont pas permis de suivre entièrement "
-            f"la dynamique du marché."
+            f"{subject.capitalize()} affiche une performance annualisée "
+            f"de {annual_return_pf:.2%} contre {annual_return_bm:.2%} "
+            f"pour le benchmark. "
+
+            f"La sous-performance observée de "
+            f"{abs(ecart_perf):.2%} traduit une évolution moins favorable "
+            f"que celle du marché de référence sur la période analysée."
         )
 
     # ======================================================
     # RISQUE
     # ======================================================
 
-    if beta > 1.10:
+    if beta >= 1.20:
+
         beta_comment = (
-            "Le bêta supérieur à 1 révèle une sensibilité accrue aux mouvements du marché. "
-            "Le portefeuille amplifie généralement les hausses mais aussi les corrections."
+            "Le bêta est sensiblement supérieur à 1, ce qui indique "
+            "une forte sensibilité aux variations du marché."
         )
-    elif beta < 0.90:
+
+    elif beta >= 1.00:
+
         beta_comment = (
-            "Le bêta inférieur à 1 traduit un profil défensif et une exposition plus modérée au marché."
+            "Le bêta est légèrement supérieur à 1 et traduit une "
+            "sensibilité modérément plus élevée que celle du marché."
         )
+
+    elif beta >= 0.80:
+
+        beta_comment = (
+            "Le bêta proche de 1 révèle un comportement globalement "
+            "aligné sur celui du marché."
+        )
+
     else:
+
         beta_comment = (
-            "Le bêta proche de 1 indique un comportement relativement aligné sur celui du marché."
+            "Le bêta inférieur à 1 traduit un profil relativement défensif."
         )
 
     if volatility_pf > volatility_bm:
+
         vol_comment = (
-            f"La volatilité annualisée du portefeuille ({volatility_pf:.2%}) "
-            f"est supérieure à celle du benchmark ({volatility_bm:.2%}), "
-            f"ce qui traduit un niveau de risque plus élevé."
+            f"La volatilité annualisée ({volatility_pf:.2%}) est supérieure "
+            f"à celle du benchmark ({volatility_bm:.2%}), ce qui indique "
+            f"un niveau de risque plus élevé."
         )
+
     else:
+
         vol_comment = (
-            f"La volatilité annualisée du portefeuille ({volatility_pf:.2%}) "
-            f"reste inférieure à celle du benchmark ({volatility_bm:.2%}), "
-            f"signe d'une meilleure maîtrise des fluctuations."
+            f"La volatilité annualisée ({volatility_pf:.2%}) est inférieure "
+            f"à celle du benchmark ({volatility_bm:.2%}), ce qui traduit "
+            f"une meilleure maîtrise des fluctuations."
         )
 
     risk_text = (
         f"{vol_comment} "
         f"{beta_comment} "
-        f"Le drawdown maximal ressort à {max_dd:.2%}, représentant "
-        f"la perte maximale enregistrée entre un point haut et un point bas."
+        f"Le drawdown maximal ressort à {max_dd:.2%}. "
+        f"Cet indicateur représente le recul le plus important "
+        f"observé entre un point haut et un point bas sur la période."
     )
 
     # ======================================================
-    # GESTION ACTIVE
+    # ANALYSE RELATIVE
     # ======================================================
 
-    alpha_comment = ""
-
-    if alpha > 0:
-        alpha_comment = (
-            f"L'alpha positif de {alpha:.2%} indique une création de valeur "
-            f"indépendante de l'exposition au marché."
+    if alpha >= 0:
+        alpha_text = (
+            f"L'alpha ressort à {alpha:.2%}. "
+            f"Cet indicateur est positif et suggère une création "
+            f"de valeur au-delà de celle expliquée par le risque de marché."
         )
     else:
-        alpha_comment = (
-            f"L'alpha de {alpha:.2%} suggère une création de valeur insuffisante."
+        alpha_text = (
+            f"L'alpha ressort à {alpha:.2%}. "
+            f"Cette valeur indique une performance inférieure à celle "
+            f"attendue compte tenu du risque de marché supporté."
         )
 
-    if pd.notna(ir):
-
-        if ir >= 1:
-            ir_comment = (
-                f"L'Information Ratio de {ir:.2f} est excellent et traduit "
-                f"une forte régularité de surperformance."
-            )
-        elif ir >= 0.5:
-            ir_comment = (
-                f"L'Information Ratio de {ir:.2f} est satisfaisant et met en évidence "
-                f"une gestion active créatrice de valeur."
-            )
-        elif ir > 0:
-            ir_comment = (
-                f"L'Information Ratio de {ir:.2f} demeure positif mais reste perfectible."
-            )
-        else:
-            ir_comment = (
-                f"L'Information Ratio de {ir:.2f} traduit une rémunération insuffisante du risque actif."
-            )
+    if ir >= 1:
+        ir_text = (
+            f"L'Information Ratio de {ir:.2f} est excellent et traduit "
+            f"une surperformance particulièrement régulière."
+        )
+    elif ir >= 0.5:
+        ir_text = (
+            f"L'Information Ratio de {ir:.2f} apparaît satisfaisant "
+            f"et met en évidence une création de valeur relativement stable."
+        )
+    elif ir > 0:
+        ir_text = (
+            f"L'Information Ratio de {ir:.2f} reste positif "
+            f"mais demeure perfectible."
+        )
     else:
-        ir_comment = ""
+        ir_text = (
+            f"L'Information Ratio de {ir:.2f} indique une rémunération "
+            f"insuffisante du risque actif."
+        )
 
     if sharpe >= 2:
-        sharpe_comment = (
-            f"Le ratio de Sharpe ({sharpe:.2f}) est excellent."
+        sharpe_text = (
+            f"Le ratio de Sharpe ({sharpe:.2f}) est excellent et traduit "
+            f"un couple rendement-risque particulièrement attractif."
         )
     elif sharpe >= 1:
-        sharpe_comment = (
+        sharpe_text = (
             f"Le ratio de Sharpe ({sharpe:.2f}) est satisfaisant."
         )
     elif sharpe > 0:
-        sharpe_comment = (
-            f"Le ratio de Sharpe ({sharpe:.2f}) reste positif mais modeste."
+        sharpe_text = (
+            f"Le ratio de Sharpe ({sharpe:.2f}) demeure positif "
+            f"mais reste modeste."
         )
     else:
-        sharpe_comment = (
+        sharpe_text = (
             f"Le ratio de Sharpe ({sharpe:.2f}) est défavorable."
         )
 
     if sortino >= 2:
-        sortino_comment = (
-            f"Le ratio de Sortino ({sortino:.2f}) confirme une excellente maîtrise du risque baissier."
+        sortino_text = (
+            f"Le ratio de Sortino ({sortino:.2f}) traduit une excellente "
+            f"gestion du risque baissier."
         )
     elif sortino >= 1:
-        sortino_comment = (
-            f"Le ratio de Sortino ({sortino:.2f}) traduit une gestion satisfaisante du risque de baisse."
+        sortino_text = (
+            f"Le ratio de Sortino ({sortino:.2f}) apparaît satisfaisant."
         )
     else:
-        sortino_comment = (
+        sortino_text = (
             f"Le ratio de Sortino ({sortino:.2f}) reste relativement faible."
         )
 
-    hit_comment = (
-        f"Le portefeuille surperforme son benchmark lors de "
-        f"{hit_ratio:.2%} des périodes observées."
+    hit_text = (
+        f"Le Hit Ratio atteint {hit_ratio:.2%}, ce qui signifie que "
+        f"{subject} surperforme le benchmark durant cette proportion des périodes observées."
     )
 
-    if pd.notna(up_capture):
-        if up_capture > 1:
-            up_text = (
-                f"L'Up Capture de {up_capture:.2f} indique que le portefeuille "
-                f"capte davantage de hausse que le benchmark dans les marchés favorables."
-            )
-        else:
-            up_text = (
-                f"L'Up Capture de {up_capture:.2f} montre une participation plus limitée aux phases haussières."
-            )
-    else:
-        up_text = ""
+    up_text = (
+        f"L'Up Capture ({up_capture:.2f}) mesure le comportement relatif "
+        f"dans les phases haussières du marché."
+        if pd.notna(up_capture)
+        else ""
+    )
 
-    if pd.notna(down_capture):
-        if down_capture < 1:
-            down_text = (
-                f"Le Down Capture de {down_capture:.2f} traduit une bonne protection lors des marchés baissiers."
-            )
-        else:
-            down_text = (
-                f"Le Down Capture de {down_capture:.2f} indique une sensibilité importante aux phases de baisse."
-            )
-    else:
-        down_text = ""
+    down_text = (
+        f"Le Down Capture ({down_capture:.2f}) mesure le comportement relatif "
+        f"dans les phases de baisse du marché."
+        if pd.notna(down_capture)
+        else ""
+    )
 
     active_text = (
-        f"{alpha_comment} "
-        f"{ir_comment} "
-        f"{sharpe_comment} "
-        f"{sortino_comment} "
-        f"{hit_comment} "
+        f"{alpha_text} "
+        f"{ir_text} "
+        f"{sharpe_text} "
+        f"{sortino_text} "
+        f"{hit_text} "
         f"{up_text} "
         f"{down_text}"
     )
 
     # ======================================================
-    # CONCLUSION
+    # SYNTHESE
     # ======================================================
 
     score = 0
@@ -1062,40 +1118,52 @@ def generate_commentary(
     if sharpe > 1:
         score += 1
 
-    if hit_ratio > 0.50:
+    if hit_ratio > 0.5:
         score += 1
 
-    if down_capture < 1:
+    if pd.notna(down_capture) and down_capture < 1:
         score += 1
 
     if score >= 4:
-        conclusion = (
-            "Les indicateurs convergent vers un diagnostic très favorable. "
-            "Le portefeuille combine création de valeur, maîtrise du risque "
-            "et régularité de surperformance. Les ratios ajustés du risque "
-            "confirment la robustesse du processus de gestion."
-        )
+
+        if category == "portfolio":
+
+            conclusion = (
+                "Dans l'ensemble, les indicateurs mettent en évidence "
+                "un profil favorable. La performance relative, les ratios "
+                "ajustés du risque et la régularité des résultats "
+                "suggèrent une gestion efficace sur la période étudiée."
+            )
+
+        else:
+
+            conclusion = (
+                "Dans l'ensemble, les indicateurs mettent en évidence "
+                "un actif ayant affiché une performance robuste relativement "
+                "à son benchmark, avec un profil rendement-risque favorable."
+            )
 
     elif score >= 2:
+
         conclusion = (
-            "Le profil général du portefeuille demeure satisfaisant. "
-            "La gestion génère de la valeur mais certains indicateurs "
-            "restent perfectibles, notamment en matière d'efficience du risque "
-            "ou de régularité de la surperformance."
+            "Les indicateurs apparaissent globalement satisfaisants "
+            "mais présentent certains points de vigilance qui devront "
+            "être suivis au cours des prochaines périodes."
         )
 
     else:
+
         conclusion = (
-            "L'analyse des indicateurs met en évidence plusieurs points de vigilance. "
-            "La performance obtenue apparaît insuffisamment rémunératrice au regard "
-            "du risque supporté et un ajustement de la stratégie pourrait être envisagé."
+            "L'analyse met en évidence un profil plus contrasté. "
+            "La performance observée ne compense pas pleinement le niveau "
+            "de risque supporté sur la période étudiée."
         )
 
     return {
         "Performance": perf_text,
         "Risque": risk_text,
-        "Gestion Active": active_text,
-        "Conclusion": conclusion,
+        "Analyse Relative": active_text,
+        "Synthèse": conclusion,
     }
 # ==========================================================
 # DICTIONNAIRE KPI
@@ -1245,6 +1313,7 @@ commentaire = generate_commentary(
     down_capture,
 )
 commentaires = generate_commentary(
+    portfolio_nav,
     annual_return_pf,
     annual_return_bm,
     alpha,
