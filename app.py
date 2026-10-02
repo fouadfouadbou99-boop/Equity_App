@@ -1342,21 +1342,21 @@ with st.expander(
 ):
 
     # ======================================================
-    # DIAGNOSTIC GLOBAL
-    # ======================================================
+# DIAGNOSTIC GLOBAL
+# ======================================================
 
-    st.subheader("🎯 Diagnostic Global")
+st.subheader("🎯 Diagnostic Global")
 
-    st.success(
-        f"{commentaires['Diagnostic']} | "
-        f"Score : {commentaires['Score']}/100"
-    )
+st.success(
+    f"{commentaires['Diagnostic']} | "
+    f"Score : {commentaires['Score']}/100"
+)
 
-    # ======================================================
-    # FORCES
-    # ======================================================
+# ======================================================
+# FORCES
+# ======================================================
 
-    st.subheader("✅ Forces")
+st.subheader("✅ Forces")
 
 if len(commentaires["Forces"]) > 0:
 
@@ -1368,6 +1368,10 @@ else:
     st.write(
         "Aucun point fort significatif identifié."
     )
+
+# ======================================================
+# POINTS DE VIGILANCE
+# ======================================================
 
 st.subheader("⚠️ Points de vigilance")
 
@@ -1382,64 +1386,45 @@ else:
         "Aucun point de vigilance majeur détecté."
     )
 
-    # ======================================================
-    # POINTS DE VIGILANCE
-    # ======================================================
+# ======================================================
+# PERFORMANCE
+# ======================================================
 
-    st.subheader("⚠️ Points de vigilance")
+st.subheader("1️⃣ Performance")
 
-    if len(commentaires["Vigilances"]) > 0:
+st.write(
+    commentaires["Performance"]
+)
 
-        for item in commentaires["Vigilances"\]:
-            st.write(f"• {item}")
+# ======================================================
+# RISQUE
+# ======================================================
 
-    else:
+st.subheader("2️⃣ Risque")
 
-        st.write(
-            "Aucun point de vigilance majeur détecté."
-        )
+st.write(
+    commentaires["Risque"]
+)
 
-    # ======================================================
-    # PERFORMANCE
-    # ======================================================
+# ======================================================
+# ANALYSE RELATIVE
+# ======================================================
 
-    st.subheader("1️⃣ Performance")
+st.subheader("3️⃣ Analyse Relative")
 
-    st.write(
-        commentaires["Performance"]
-    )
+st.write(
+    commentaires["Analyse Relative"]
+)
 
-    # ======================================================
-    # RISQUE
-    # ======================================================
+# ======================================================
+# SYNTHESE
+# ======================================================
 
-    st.subheader("2️⃣ Risque")
+st.subheader("4️⃣ Synthèse")
 
-    st.write(
-        commentaires["Risque"]
-    )
-
-    # ======================================================
-    # ANALYSE RELATIVE
-    # ======================================================
-
-    st.subheader("3️⃣ Analyse Relative")
-
-    st.write(
-        commentaires["Analyse Relative"]
-    )
-
-    # ======================================================
-    # SYNTHESE
-    # ======================================================
-
-    st.subheader("4️⃣ Synthèse")
-
-    st.success(
-        commentaires["Synthèse"]
-    )
-
-st.markdown("---")
+st.ccess(
+    commentaires["Synthèse"]
+)
 
 # ==========================================================
 # KPI
