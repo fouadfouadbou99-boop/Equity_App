@@ -1465,14 +1465,6 @@ metrics = st.columns(4)
 for i, (key, value) in enumerate(kpis.items()):
     metrics[i % 4].metric(key, value)
 
-# ==========================================================
-# TABLEAU DETAILLE
-# ==========================================================
-
-st.header("📋 Tableau Détaillé")
-
-kpi_df = pd.DataFrame({
-    "Indicateur": [str(k) for k in 
 
 # ==========================================================
 # KPI
