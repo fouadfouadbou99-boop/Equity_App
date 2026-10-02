@@ -1475,7 +1475,7 @@ with col3:
         )
     )
 
-    g_dd.update_layout(
+    fig_dd.update_layout(
         title="Drawdown (%)",
         xaxis_title="Date",
         yaxis_title="Drawdown (%)"
