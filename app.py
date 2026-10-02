@@ -856,7 +856,7 @@ batting_average = np.mean(
     returns_pf > returns_bm
 )
 # ==========================================================
-# COMMENTAIRE DE GESTION
+# COMMENTAIRE DE GESTION AVANCE
 # ==========================================================
 def generate_commentary(
     annual_return_pf,
@@ -874,109 +874,221 @@ def generate_commentary(
     down_capture,
 ):
 
-    perf_text = ""
-    if pd.notna(annual_return_pf) and pd.notna(annual_return_bm):
+    # ======================================================
+    # PERFORMANCE
+    # ======================================================
 
-        ecart = annual_return_pf - annual_return_bm
+    ecart_perf = annual_return_pf - annual_return_bm
 
-        if ecart > 0:
-            perf_text = (
-                f"Le portefeuille affiche une performance annualisée de "
-                f"{annual_return_pf:.2%} contre {annual_return_bm:.2%} "
-                f"pour son benchmark, soit une surperformance de "
-                f"{ecart:.2%}."
-            )
-        else:
-            perf_text = (
-                f"Le portefeuille affiche une performance annualisée de "
-                f"{annual_return_pf:.2%} contre {annual_return_bm:.2%} "
-                f"pour son benchmark, soit une sous-performance de "
-                f"{abs(ecart):.2%}."
-            )
+    if ecart_perf > 0:
+        perf_text = (
+            f"Le portefeuille affiche une performance annualisée de "
+            f"{annual_return_pf:.2%}, supérieure à celle du benchmark "
+            f"({annual_return_bm:.2%}). La surperformance atteint "
+            f"{ecart_perf:.2%}, ce qui traduit une capacité significative "
+            f"à générer de la valeur sur la période analysée. "
+            f"Cette évolution témoigne d'une allocation efficace des actifs "
+            f"et d'une sélection de titres globalement favorable."
+        )
+    else:
+        perf_text = (
+            f"Le portefeuille affiche une performance annualisée de "
+            f"{annual_return_pf:.2%} contre {annual_return_bm:.2%} "
+            f"pour son benchmark. La sous-performance observée de "
+            f"{abs(ecart_perf):.2%} suggère que les choix d'allocation "
+            f"ou de sélection n'ont pas permis de suivre entièrement "
+            f"la dynamique du marché."
+        )
 
-    beta_comment = ""
+    # ======================================================
+    # RISQUE
+    # ======================================================
 
-    if pd.notna(beta):
-        if beta > 1.1:
-            beta_comment = "sensibilité supérieure au marché"
-        elif beta < 0.9:
-            beta_comment = "profil défensif"
-        else:
-            beta_comment = "sensibilité proche du marché"
+    if beta > 1.10:
+        beta_comment = (
+            "Le bêta supérieur à 1 révèle une sensibilité accrue aux mouvements du marché. "
+            "Le portefeuille amplifie généralement les hausses mais aussi les corrections."
+        )
+    elif beta < 0.90:
+        beta_comment = (
+            "Le bêta inférieur à 1 traduit un profil défensif et une exposition plus modérée au marché."
+        )
+    else:
+        beta_comment = (
+            "Le bêta proche de 1 indique un comportement relativement aligné sur celui du marché."
+        )
 
-    vol_comment = ""
-
-    if pd.notna(volatility_pf) and pd.notna(volatility_bm):
-        if volatility_pf > volatility_bm:
-            vol_comment = "une volatilité supérieure à celle du benchmark"
-        else:
-            vol_comment = "une volatilité inférieure à celle du benchmark"
+    if volatility_pf > volatility_bm:
+        vol_comment = (
+            f"La volatilité annualisée du portefeuille ({volatility_pf:.2%}) "
+            f"est supérieure à celle du benchmark ({volatility_bm:.2%}), "
+            f"ce qui traduit un niveau de risque plus élevé."
+        )
+    else:
+        vol_comment = (
+            f"La volatilité annualisée du portefeuille ({volatility_pf:.2%}) "
+            f"reste inférieure à celle du benchmark ({volatility_bm:.2%}), "
+            f"signe d'une meilleure maîtrise des fluctuations."
+        )
 
     risk_text = (
-        f"Le portefeuille présente {vol_comment}. "
-        f"Son bêta de {beta:.2f} traduit une {beta_comment}. "
-        f"Le drawdown maximal ressort à {max_dd:.2%}."
+        f"{vol_comment} "
+        f"{beta_comment} "
+        f"Le drawdown maximal ressort à {max_dd:.2%}, représentant "
+        f"la perte maximale enregistrée entre un point haut et un point bas."
     )
 
-    alpha_text = ""
-    if pd.notna(alpha):
-        if alpha > 0:
-            alpha_text = (
-                f"L'alpha positif de {alpha:.2%} témoigne d'une création de valeur."
+    # ======================================================
+    # GESTION ACTIVE
+    # ======================================================
+
+    alpha_comment = ""
+
+    if alpha > 0:
+        alpha_comment = (
+            f"L'alpha positif de {alpha:.2%} indique une création de valeur "
+            f"indépendante de l'exposition au marché."
+        )
+    else:
+        alpha_comment = (
+            f"L'alpha de {alpha:.2%} suggère une création de valeur insuffisante."
+        )
+
+    if pd.notna(ir):
+
+        if ir >= 1:
+            ir_comment = (
+                f"L'Information Ratio de {ir:.2f} est excellent et traduit "
+                f"une forte régularité de surperformance."
+            )
+        elif ir >= 0.5:
+            ir_comment = (
+                f"L'Information Ratio de {ir:.2f} est satisfaisant et met en évidence "
+                f"une gestion active créatrice de valeur."
+            )
+        elif ir > 0:
+            ir_comment = (
+                f"L'Information Ratio de {ir:.2f} demeure positif mais reste perfectible."
             )
         else:
-            alpha_text = (
-                f"L'alpha de {alpha:.2%} traduit une création de valeur insuffisante."
+            ir_comment = (
+                f"L'Information Ratio de {ir:.2f} traduit une rémunération insuffisante du risque actif."
             )
+    else:
+        ir_comment = ""
 
-    ir_text = ""
-    if pd.notna(ir):
-        ir_text = (
-            f"L'Information Ratio s'établit à {ir:.2f}."
+    if sharpe >= 2:
+        sharpe_comment = (
+            f"Le ratio de Sharpe ({sharpe:.2f}) est excellent."
+        )
+    elif sharpe >= 1:
+        sharpe_comment = (
+            f"Le ratio de Sharpe ({sharpe:.2f}) est satisfaisant."
+        )
+    elif sharpe > 0:
+        sharpe_comment = (
+            f"Le ratio de Sharpe ({sharpe:.2f}) reste positif mais modeste."
+        )
+    else:
+        sharpe_comment = (
+            f"Le ratio de Sharpe ({sharpe:.2f}) est défavorable."
         )
 
-    hit_text = ""
-    if pd.notna(hit_ratio):
-        hit_text = (
-            f"Le portefeuille surperforme son benchmark dans "
-            f"{hit_ratio:.2%} des observations."
+    if sortino >= 2:
+        sortino_comment = (
+            f"Le ratio de Sortino ({sortino:.2f}) confirme une excellente maîtrise du risque baissier."
         )
+    elif sortino >= 1:
+        sortino_comment = (
+            f"Le ratio de Sortino ({sortino:.2f}) traduit une gestion satisfaisante du risque de baisse."
+        )
+    else:
+        sortino_comment = (
+            f"Le ratio de Sortino ({sortino:.2f}) reste relativement faible."
+        )
+
+    hit_comment = (
+        f"Le portefeuille surperforme son benchmark lors de "
+        f"{hit_ratio:.2%} des périodes observées."
+    )
+
+    if pd.notna(up_capture):
+        if up_capture > 1:
+            up_text = (
+                f"L'Up Capture de {up_capture:.2f} indique que le portefeuille "
+                f"capte davantage de hausse que le benchmark dans les marchés favorables."
+            )
+        else:
+            up_text = (
+                f"L'Up Capture de {up_capture:.2f} montre une participation plus limitée aux phases haussières."
+            )
+    else:
+        up_text = ""
+
+    if pd.notna(down_capture):
+        if down_capture < 1:
+            down_text = (
+                f"Le Down Capture de {down_capture:.2f} traduit une bonne protection lors des marchés baissiers."
+            )
+        else:
+            down_text = (
+                f"Le Down Capture de {down_capture:.2f} indique une sensibilité importante aux phases de baisse."
+            )
+    else:
+        down_text = ""
 
     active_text = (
-        f"{alpha_text} {ir_text} {hit_text}"
+        f"{alpha_comment} "
+        f"{ir_comment} "
+        f"{sharpe_comment} "
+        f"{sortino_comment} "
+        f"{hit_comment} "
+        f"{up_text} "
+        f"{down_text}"
     )
+
+    # ======================================================
+    # CONCLUSION
+    # ======================================================
 
     score = 0
 
-    if pd.notna(alpha) and alpha > 0:
+    if alpha > 0:
         score += 1
 
-    if pd.notna(ir) and ir > 0:
+    if ir > 0.5:
         score += 1
 
-    if pd.notna(sharpe) and sharpe > 1:
+    if sharpe > 1:
         score += 1
 
-    if pd.notna(hit_ratio) and hit_ratio > 0.5:
+    if hit_ratio > 0.50:
         score += 1
 
-    if score >= 3:
+    if down_capture < 1:
+        score += 1
+
+    if score >= 4:
         conclusion = (
-            "Dans l'ensemble, les indicateurs mettent en évidence "
-            "une gestion performante, créatrice de valeur et bien "
-            "rémunérée au regard du risque supporté."
+            "Les indicateurs convergent vers un diagnostic très favorable. "
+            "Le portefeuille combine création de valeur, maîtrise du risque "
+            "et régularité de surperformance. Les ratios ajustés du risque "
+            "confirment la robustesse du processus de gestion."
         )
+
     elif score >= 2:
         conclusion = (
-            "Les indicateurs ressortent globalement satisfaisants "
-            "avec une création de valeur partielle et un profil "
-            "de risque maîtrisé."
+            "Le profil général du portefeuille demeure satisfaisant. "
+            "La gestion génère de la valeur mais certains indicateurs "
+            "restent perfectibles, notamment en matière d'efficience du risque "
+            "ou de régularité de la surperformance."
         )
+
     else:
         conclusion = (
-            "Les indicateurs suggèrent une performance insuffisante "
-            "au regard des risques encourus et nécessitent une "
-            "vigilance accrue."
+            "L'analyse des indicateurs met en évidence plusieurs points de vigilance. "
+            "La performance obtenue apparaît insuffisamment rémunératrice au regard "
+            "du risque supporté et un ajustement de la stratégie pourrait être envisagé."
         )
 
     return {
@@ -1285,38 +1397,6 @@ with col4:
         fig_hist,
         use_container_width=True
     )
-
-# ==========================================================
-# GRAPHIQUES
-# ==========================================================
-
-st.header("📈 Visualisations")
-col1, col2 = st.columns(2)
-
-with col1:
-    st.subheader("Évolution Base 100")
-    fig = px.line(df, x=date_col, y=[portfolio_nav, benchmark_nav])
-    fig.update_layout(hovermode="x unified")
-    st.plotly_chart(fig, use_container_width=True)
-
-with col2:
-    st.subheader("Rendements Périodiques")
-    fig2 = px.bar(df, x=date_col, y=[portfolio_ret, benchmark_ret], barmode="group")
-    st.plotly_chart(fig2, use_container_width=True)
-
-col3, col4 = st.columns(2)
-
-with col3:
-    st.subheader("Drawdown")
-    fig_dd = go.Figure()
-    fig_dd.add_trace(go.Scatter(x=df[date_col], y=dd_curve.to_numpy() * 100, fill="tozeroy", line=dict(color="red")))
-    fig_dd.update_layout(title="Drawdown (%)", xaxis_title="Date", yaxis_title="Drawdown (%)")
-    st.plotly_chart(fig_dd, use_container_width=True)
-
-with col4:
-    st.subheader("Distribution Rendements")
-    fig_hist = px.histogram(returns_pf * 100, nbins=30, title="Distribution")
-    st.plotly_chart(fig_hist, use_container_width=True)
 
 # ==========================================================
 # TELECHARGEMENTS
